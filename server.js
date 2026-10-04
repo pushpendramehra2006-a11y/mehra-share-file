@@ -5,7 +5,7 @@ const { WebSocketServer } = require('ws');
 const PORT = process.env.PORT || 3000;
 const PUB = fs.existsSync(path.join(__dirname, 'public')) ? path.join(__dirname, 'public') : __dirname;
 const BLOCK = /(^|[\\/])(server\.js|package(-lock)?\.json|node_modules)([\\/]|$)/;
-const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.json': 'application/json', '.svg': 'image/svg+xml' };
+const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png' };
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET,POST,OPTIONS', 'Access-Control-Allow-Headers': '*' };
 
 const sessions = {}, peerOf = {}, rooms = {}, transfers = {};
