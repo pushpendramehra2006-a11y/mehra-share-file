@@ -6,8 +6,8 @@ const fmt = n => n > 1e9 ? (n / 1e9).toFixed(2) + ' GB' : n > 1e6 ? (n / 1e6).to
 let ws, live = false;
 const SID = Math.random().toString(36).slice(2) + Date.now().toString(36); // is device ki pehchaan (reconnect ke liye)
 // Live Server (5500) par ho to server 3001 par dhoondho
-const SRV = ['3000', '3001'].includes(location.port) ? location.host : location.hostname + ':3001';
-const BASE = location.protocol + '//' + SRV;
+const SRV = location.host;
+const BASE = location.origin;
 const files = {}, cards = {};
 const sig = o => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); };
 
