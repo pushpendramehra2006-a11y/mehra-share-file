@@ -1,137 +1,192 @@
 :root {
-  --bg-color: #0d1117;
-  --card-bg: #161b22;
+  --bg-color: #0b0f1e;
+  --card-bg: rgba(22, 27, 46, 0.85);
   --text-main: #f0f6fc;
   --text-muted: #8b949e;
-  --accent-color: #58a6ff;
-  --border-color: #30363d;
-  --beam-light: rgba(255, 255, 255, 0.45);
-  --bat-color: #050505;
-  --bat-shadow: rgba(0, 0, 0, 0.8);
+  --accent-color: #7862f9;
+  --border-color: #262c45;
+  --beam-color: rgba(255, 255, 255, 0.45);
+  --bat-fill: #000000;
+  --bat-glow: rgba(255, 255, 255, 0.7);
+  --overlay-bg: rgba(5, 7, 15, 0.75);
 }
 
 [data-theme="light"] {
-  --bg-color: #f6f8fa;
-  --card-bg: #ffffff;
-  --text-main: #24292f;
+  --bg-color: #f4f6fb;
+  --card-bg: rgba(255, 255, 255, 0.9);
+  --text-main: #1f2328;
   --text-muted: #57606a;
   --accent-color: #0969da;
   --border-color: #d0d7de;
-  --beam-light: rgba(255, 215, 0, 0.35);
-  --bat-color: #e50914;
-  --bat-shadow: rgba(229, 9, 20, 0.6);
+  --beam-color: rgba(255, 220, 100, 0.5);
+  --bat-fill: #e50914;
+  --bat-glow: rgba(229, 9, 20, 0.6);
+  --overlay-bg: rgba(240, 243, 248, 0.82);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; transition: background-color 0.25s, color 0.25s; }
-body { background: var(--bg-color); color: var(--text-main); min-height: 100vh; overflow-x: hidden; position: relative; }
+body { background: var(--bg-color); color: var(--text-main); min-height: 100vh; position: relative; overflow-x: hidden; }
 
-.top-nav-actions { position: fixed; top: 16px; right: 16px; display: flex; gap: 10px; z-index: 9999; }
-.nav-btn { background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color); padding: 8px 14px; border-radius: 20px; cursor: pointer; font-weight: 600; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+/* Header buttons */
+.app-header { position: absolute; top: 0; left: 0; right: 0; padding: 18px 24px; display: flex; justify-content: flex-end; z-index: 10001; }
+.header-right { display: flex; gap: 10px; }
+.header-btn { background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.9rem; backdrop-filter: blur(8px); }
 .help-btn { border-color: var(--accent-color); }
 
+/* Main Card */
 .main-container { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
-.app-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; max-width: 480px; width: 100%; padding: 28px; box-shadow: 0 12px 30px rgba(0,0,0,0.25); text-align: center; }
-.brand-title { font-size: 1.8rem; margin-bottom: 6px; }
+.app-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 18px; max-width: 460px; width: 100%; padding: 32px 28px; box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35); text-align: center; backdrop-filter: blur(12px); }
+.brand-title { font-size: 1.9rem; margin-bottom: 6px; font-weight: 700; }
 .tagline { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px; }
 
 .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-.core-btn { border: none; border-radius: 10px; padding: 12px; font-weight: 600; cursor: pointer; }
-.primary-btn { background: var(--accent-color); color: #fff; }
+.core-btn { border: none; border-radius: 10px; padding: 12px 16px; font-weight: 600; cursor: pointer; font-size: 0.95rem; }
+.primary-btn { background: linear-gradient(135deg, #7862f9, #00c2ff); color: #fff; }
 .secondary-btn { background: transparent; border: 1px solid var(--border-color); color: var(--text-main); }
 .action-submit-btn { width: 100%; background: #238636; color: #fff; margin-top: 12px; }
 
 .section-box { margin-top: 16px; text-align: left; }
-.drop-zone { border: 2px dashed var(--border-color); border-radius: 10px; padding: 24px; display: block; text-align: center; cursor: pointer; }
+.drop-zone { border: 2px dashed var(--border-color); border-radius: 12px; padding: 26px; display: block; text-align: center; cursor: pointer; background: rgba(255,255,255,0.02); }
 .drop-zone input { display: none; }
-.text-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-main); margin-bottom: 8px; }
+.text-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: var(--text-main); margin-bottom: 8px; }
 .share-box { display: flex; gap: 8px; margin-top: 12px; }
-.share-box input { flex: 1; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-main); }
+.share-box input { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.2); color: var(--text-main); }
 .status-box { margin-top: 20px; }
-.progress-bar-bg { width: 100%; height: 8px; background: var(--border-color); border-radius: 4px; overflow: hidden; margin-top: 6px; }
-.progress-bar-fill { width: 0%; height: 100%; background: var(--accent-color); transition: width 0.2s; }
+.progress-bar-bg { width: 100%; height: 8px; background: var(--border-color); border-radius: 4px; overflow: hidden; margin-top: 8px; }
+.progress-bar-fill { width: 0%; height: 100%; background: #00c2ff; transition: width 0.2s; }
 .hidden { display: none !important; }
 
-/* BATMAN SIGNAL 3D PROJECTOR */
+/* ============================================================
+   BATMAN DUAL-SEARCHLIGHT BLUR OVERLAY
+============================================================ */
 .batsignal-overlay {
   position: fixed;
   inset: 0;
-  pointer-events: none;
-  z-index: 9000;
-  perspective: 1000px;
+  background: var(--overlay-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
+  perspective: 1200px;
+  animation: overlayFadeIn 0.3s ease-out;
 }
 
-.light-beam {
+/* Left Beam (Shooting from bottom-left corner to center) */
+.beam-left {
   position: absolute;
-  bottom: 0;
-  right: 50px;
-  width: 0;
-  height: 0;
-  border-left: 200px solid transparent;
-  border-right: 200px solid transparent;
-  border-top: 90vh solid var(--beam-light);
+  bottom: -20%;
+  left: -15%;
+  width: 140px;
+  height: 120vh;
+  background: linear-gradient(to top, transparent 0%, var(--beam-color) 60%, rgba(255,255,255,0.85) 100%);
   transform-origin: bottom center;
-  transform: rotate(-18deg);
-  filter: blur(14px);
-  opacity: 0.85;
-  animation: beamFlicker 3s infinite alternate;
+  transform: rotate(38deg);
+  filter: blur(28px);
+  clip-path: polygon(40% 0%, 60% 0%, 100% 100%, 0% 100%);
+  opacity: 0.75;
+  animation: beamPulseLeft 3.5s infinite ease-in-out alternate;
+  pointer-events: none;
 }
 
-.bat-cloud-target {
+/* Right Beam (Shooting from bottom-right corner to center) */
+.beam-right {
   position: absolute;
-  top: 8%;
+  bottom: -20%;
+  right: -15%;
+  width: 140px;
+  height: 120vh;
+  background: linear-gradient(to top, transparent 0%, var(--beam-color) 60%, rgba(255,255,255,0.85) 100%);
+  transform-origin: bottom center;
+  transform: rotate(-38deg);
+  filter: blur(28px);
+  clip-path: polygon(40% 0%, 60% 0%, 100% 100%, 0% 100%);
+  opacity: 0.75;
+  animation: beamPulseRight 3.5s infinite ease-in-out alternate;
+  pointer-events: none;
+}
+
+/* Central Spotlight Glow where both lights meet */
+.center-spotlight-glow {
+  position: absolute;
+  top: 18%;
   left: 50%;
-  transform: translateX(-50%) rotateX(25deg);
-  pointer-events: auto;
+  transform: translate(-50%, -50%);
+  width: 380px;
+  height: 240px;
+  background: radial-gradient(ellipse at center, var(--beam-color) 0%, rgba(255,255,255,0) 70%);
+  filter: blur(20px);
+  pointer-events: none;
+}
+
+/* 3D Batman & Help Content Center Container */
+.bat-stage {
   display: flex;
   flex-direction: column;
   align-items: center;
-  filter: drop-shadow(0 20px 30px var(--bat-shadow));
+  position: relative;
+  z-index: 2;
+  transform-style: preserve-3d;
+  animation: stageFloat 3.8s ease-in-out infinite alternate;
 }
 
 .batman-logo-3d {
-  width: 220px;
-  height: 130px;
-  background: var(--beam-light);
+  width: 240px;
+  height: 140px;
+  background: radial-gradient(circle, var(--beam-color) 20%, rgba(255,255,255,0.15) 70%, transparent 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 60px 25px var(--beam-light);
-  transform-style: preserve-3d;
-  animation: batFloat 4s ease-in-out infinite alternate;
+  box-shadow: 0 0 70px 25px var(--bat-glow);
+  transform: translateZ(40px) rotateX(15deg);
+  margin-bottom: 22px;
 }
 
 .bat-svg {
-  width: 170px;
-  fill: var(--bat-color);
-  transform: translateZ(35px);
-  filter: drop-shadow(0 10px 12px rgba(0,0,0,0.7));
+  width: 180px;
+  fill: var(--bat-fill);
+  filter: drop-shadow(0 12px 14px rgba(0, 0, 0, 0.9));
+  transform: translateZ(25px);
 }
 
 .help-popup-card {
-  margin-top: 20px;
   background: var(--card-bg);
   border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 16px 20px;
+  border-radius: 14px;
+  padding: 20px 24px;
   color: var(--text-main);
-  max-width: 340px;
-  text-align: left;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-  font-size: 0.85rem;
-  line-height: 1.4;
+  max-width: 380px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  transform: translateZ(50px);
 }
 
-.help-popup-card h3 { margin-bottom: 8px; color: var(--accent-color); font-size: 1rem; }
-
-@keyframes batFloat {
-  0% { transform: translateY(0px) rotateY(-8deg) rotateX(15deg); }
-  100% { transform: translateY(-16px) rotateY(8deg) rotateX(22deg); }
+.help-popup-card h3 {
+  margin-bottom: 10px;
+  color: var(--accent-color);
+  font-size: 1.1rem;
 }
 
-@keyframes beamFlicker {
-  0% { opacity: 0.75; }
-  50% { opacity: 0.9; }
-  100% { opacity: 0.8; }
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes stageFloat {
+  0% { transform: translateY(0px) rotateY(-4deg); }
+  100% { transform: translateY(-14px) rotateY(4deg); }
+}
+
+@keyframes beamPulseLeft {
+  0% { transform: rotate(36deg); opacity: 0.65; }
+  100% { transform: rotate(40deg); opacity: 0.85; }
+}
+
+@keyframes beamPulseRight {
+  0% { transform: rotate(-36deg); opacity: 0.65; }
+  100% { transform: rotate(-40deg); opacity: 0.85; }
 }

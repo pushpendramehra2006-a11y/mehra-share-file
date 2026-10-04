@@ -10,34 +10,43 @@
 </head>
 <body>
 
-  <!-- Top Right Controls -->
-  <div class="top-nav-actions">
-    <button id="themeToggleBtn" class="nav-btn" title="Toggle Theme">☀️</button>
-    <button id="helpTorchBtn" class="nav-btn help-btn" title="Batman Help Signal">🔦 Help</button>
-  </div>
+  <!-- Top Right Header Controls -->
+  <header class="app-header">
+    <div class="header-right">
+      <button id="themeToggleBtn" class="header-btn" title="Toggle Theme">☀️</button>
+      <button id="helpTorchBtn" class="header-btn help-btn" title="Help">🔦 Help</button>
+    </div>
+  </header>
 
-  <!-- Bat-Signal 3D Projector Container -->
+  <!-- Dual Searchlight Batman Overlay -->
   <div id="batSignalOverlay" class="batsignal-overlay hidden">
-    <div class="light-beam"></div>
-    <div class="bat-cloud-target">
+    <!-- Left & Right Spotlight Beams converging to Center -->
+    <div class="light-beam beam-left"></div>
+    <div class="light-beam beam-right"></div>
+    <div class="center-spotlight-glow"></div>
+
+    <!-- Center Stage: 3D Batman + Help Card -->
+    <div class="bat-stage">
       <div class="batman-logo-3d">
         <svg viewBox="0 0 500 300" class="bat-svg">
           <path d="M 250,55 C 242,40 236,20 234,0 C 230,12 216,35 192,30 C 160,24 100,50 65,95 C 25,145 0,210 20,245 C 50,210 95,200 135,215 C 165,226 195,260 215,300 C 220,270 235,250 250,250 C 265,250 280,270 285,300 C 305,260 335,226 365,215 C 405,200 450,210 480,245 C 500,210 475,145 435,95 C 400,50 340,24 308,30 C 284,35 270,12 266,0 C 264,20 258,40 250,55 Z" />
         </svg>
       </div>
+
       <div class="help-popup-card">
         <h3>Mehra Share Help</h3>
-        <p>1. <b>Bhejna:</b> File choose karein aur link dost ko bhejein.</p>
-        <p>2. <b>Download:</b> Dost link open karega aur file direct pipe se receive hogi.</p>
-        <p>3. <b>6 GB Streaming:</b> Transfer chalte samay dono device screen/tab band na karein.</p>
+        <p>1. <b>Bhejna:</b> File choose karein aur direct link dost ko bhejein.</p>
+        <p>2. <b>Receive:</b> Dost link khole aur instant connect ho jayega.</p>
+        <p>3. <b>6 GB Stream:</b> Transfer poora hone tak browser tab khula rakhein.</p>
       </div>
     </div>
   </div>
 
+  <!-- Main App Box -->
   <main class="main-container">
     <div class="app-card">
       <h1 class="brand-title">Mehra Share</h1>
-      <p class="tagline">Fast peer-to-peer 6 GB cloud streaming</p>
+      <p class="tagline">Fast peer-to-peer file sharing between devices</p>
 
       <div class="action-grid">
         <button id="sendViewBtn" class="core-btn primary-btn">Bhejna hai (Send)</button>
@@ -46,7 +55,7 @@
 
       <div id="senderSection" class="section-box hidden">
         <label class="drop-zone" for="fileInput">
-          <span id="fileLabel">File choose karein (Max 6 GB)</span>
+          <span id="fileLabel">📁 File choose karein (Max 6 GB)</span>
           <input type="file" id="fileInput" />
         </label>
         <button id="generateLinkBtn" class="core-btn action-submit-btn">Share Link Generate Karein</button>
