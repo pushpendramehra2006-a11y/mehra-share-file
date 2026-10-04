@@ -13,7 +13,7 @@
   <!-- Top Right Header Controls -->
   <header class="app-header">
     <div class="header-right">
-      <button id="themeToggleBtn" class="header-btn" title="Toggle Theme">☀️️</button>
+      <button id="themeToggleBtn" class="header-btn" title="Toggle Theme">☀️</button>
       <button id="helpTorchBtn" class="header-btn help-btn" title="Help">🔦 Help</button>
     </div>
   </header>
@@ -40,15 +40,15 @@
 
       <div class="help-popup-card">
         <h3>Mehra Share Help</h3>
-        <p>1. <b>Bhejna:</b> File select karein aur screen par aaya <b>6-digit code</b> dost ko batayein.</p>
-        <p>2. <b>Receive:</b> Dost "Receive Karna hai" par jaakar wahi code daale.</p>
-        <p>3. <b>Limit:</b> Single stream me maximum <b>6 GB</b> tak file transfer support karta hai.</p>
-        <p>4. <b>Streaming:</b> Transfer ke dauran browser tab screen par khula rakhein.</p>
+        <p>1. <b>Send:</b> Choose your file and share the generated <b>6-digit code</b> with the receiver.</p>
+        <p>2. <b>Receive:</b> The receiver enters the 6-digit code and starts downloading instantly.</p>
+        <p>3. <b>Limit:</b> Supports peer streaming up to <b>6 GB</b> per transfer.</p>
+        <p>4. <b>Streaming:</b> Keep the browser tab open on both devices until the transfer finishes.</p>
       </div>
     </div>
   </div>
 
-  <!-- Main Card -->
+  <!-- Main 3D Tilt Card -->
   <main class="main-container">
     <div class="app-card" id="tiltCard">
       <div class="card-shine-effect" id="cardShine"></div>
@@ -57,21 +57,21 @@
       <p class="tagline">Fast peer-to-peer file sharing between devices</p>
 
       <div class="action-grid">
-        <button id="sendViewBtn" class="core-btn primary-btn">Bhejna hai (Send)</button>
-        <button id="receiveViewBtn" class="core-btn secondary-btn">Receive Karna hai</button>
+        <button id="sendViewBtn" class="core-btn primary-btn">Send Files</button>
+        <button id="receiveViewBtn" class="core-btn secondary-btn">Receive Files</button>
       </div>
 
       <!-- Sender Section -->
       <div id="senderSection" class="section-box">
         <label class="drop-zone" for="fileInput">
-          <span id="fileLabel">📁 File choose karein</span>
+          <span id="fileLabel">📁 Choose a file</span>
           <input type="file" id="fileInput" />
         </label>
-        <button id="generateCodeBtn" class="core-btn action-submit-btn">Code Generate Karein</button>
+        <button id="generateCodeBtn" class="core-btn action-submit-btn">Generate Code</button>
         
-        <!-- 6-Digit Code Display Box -->
+        <!-- 6-Digit Code Badge -->
         <div id="codeDisplayContainer" class="code-box-wrapper hidden">
-          <p class="code-helper-text">Ye 6-digit code receiver ko batayein:</p>
+          <p class="code-helper-text">Share this 6-digit code with the receiver:</p>
           <div class="code-badge-row">
             <span id="generatedCodeText" class="code-digits">------</span>
             <button id="copyCodeBtn" class="code-copy-btn" title="Copy Code">📋 Copy</button>
@@ -81,7 +81,7 @@
 
       <!-- Receiver Section -->
       <div id="receiverSection" class="section-box hidden">
-        <input type="text" id="roomCodeInput" class="text-input" placeholder="6-digit code yahan daalein" maxlength="6" />
+        <input type="text" id="roomCodeInput" class="text-input" placeholder="Enter 6-digit code" maxlength="6" />
         <button id="connectRoomBtn" class="core-btn action-submit-btn">Connect & Download</button>
       </div>
 

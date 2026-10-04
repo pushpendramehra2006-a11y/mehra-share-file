@@ -1,6 +1,6 @@
 const socket = io();
 
-// Rain generator
+// Rain generator for Batman dark mode
 const rainContainer = document.getElementById('rainLayer');
 function initRain() {
   if (!rainContainer) return;
@@ -16,7 +16,7 @@ function initRain() {
 }
 initRain();
 
-// Sun motes
+// Sunlight floating motes for light mode
 const sunMotesContainer = document.getElementById('sunParticlesLayer');
 function initSunMotes() {
   if (!sunMotesContainer) return;
@@ -129,14 +129,14 @@ fileInput.addEventListener('change', (e) => {
 });
 
 generateCodeBtn.addEventListener('click', () => {
-  if (!selectedFile) return alert('Pehle file choose karein');
+  if (!selectedFile) return alert('Please select a file first');
   currentCode = Math.floor(100000 + Math.random() * 900000).toString();
   socket.emit('create-room', currentCode);
   
   generatedCodeText.textContent = currentCode;
   codeDisplayContainer.classList.remove('hidden');
   statusContainer.classList.remove('hidden');
-  statusText.textContent = `Room created! Receiver se kahein ki code ${currentCode} enter kare.`;
+  statusText.textContent = `Room created! Ask the receiver to enter code: ${currentCode}`;
 });
 
 copyCodeBtn.addEventListener('click', () => {
@@ -149,7 +149,7 @@ copyCodeBtn.addEventListener('click', () => {
 
 socket.on('receiver-joined', () => {
   statusContainer.classList.remove('hidden');
-  statusText.textContent = 'Receiver connect ho chuka hai! File send ho rahi hai...';
+  statusText.textContent = 'Receiver connected! Transfer starting...';
   socket.emit('file-meta', {
     code: currentCode,
     name: selectedFile.name,
@@ -183,10 +183,10 @@ const connectRoomBtn = document.getElementById('connectRoomBtn');
 
 connectRoomBtn.addEventListener('click', () => {
   const code = roomCodeInput.value.trim();
-  if (!code || code.length !== 6) return alert('Kripya 6-digit code daalein');
+  if (!code || code.length !== 6) return alert('Please enter a valid 6-digit code');
   socket.emit('join-room', code);
   statusContainer.classList.remove('hidden');
-  statusText.textContent = 'Sender se connect ho rahe hain...';
+  statusText.textContent = 'Connecting to sender...';
 });
 
 socket.on('file-meta', (meta) => {
