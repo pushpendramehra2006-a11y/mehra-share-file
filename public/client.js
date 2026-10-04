@@ -3,6 +3,7 @@ const socket = io();
 // Rain generator for Batman dark mode
 const rainContainer = document.getElementById('rainLayer');
 function initRain() {
+  if (!rainContainer) return;
   rainContainer.innerHTML = '';
   for (let i = 0; i < 45; i++) {
     const drop = document.createElement('div');
@@ -14,6 +15,55 @@ function initRain() {
   }
 }
 initRain();
+
+// Sunlight floating motes for light mode
+const sunMotesContainer = document.getElementById('sunParticlesLayer');
+function initSunMotes() {
+  if (!sunMotesContainer) return;
+  sunMotesContainer.innerHTML = '';
+  for (let i = 0; i < 25; i++) {
+    const mote = document.createElement('div');
+    mote.className = 'sun-mote';
+    const size = Math.random() * 5 + 3;
+    mote.style.width = size + 'px';
+    mote.style.height = size + 'px';
+    mote.style.left = Math.random() * 100 + '%';
+    mote.style.animationDuration = (4 + Math.random() * 4) + 's';
+    mote.style.animationDelay = (Math.random() * 4) + 's';
+    sunMotesContainer.appendChild(mote);
+  }
+}
+initSunMotes();
+
+// 3D Card Tilt & Flash Shine Effect on Mouse Move
+const tiltCard = document.getElementById('tiltCard');
+const cardShine = document.getElementById('cardShine');
+
+if (tiltCard) {
+  tiltCard.addEventListener('mousemove', (e) => {
+    const rect = tiltCard.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    
+    const rotateX = ((y - centerY) / centerY) * -10;
+    const rotateY = ((x - centerX) / centerX) * 10;
+    
+    tiltCard.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+    
+    if (cardShine) {
+      cardShine.style.opacity = '1';
+      cardShine.style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(255, 255, 255, 0.28) 0%, transparent 60%)`;
+    }
+  });
+
+  tiltCard.addEventListener('mouseleave', () => {
+    tiltCard.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+    if (cardShine) cardShine.style.opacity = '0';
+  });
+}
 
 // Theme Toggle
 const themeBtn = document.getElementById('themeToggleBtn');
@@ -34,7 +84,6 @@ helpBtn.addEventListener('click', () => {
   batOverlay.classList.toggle('hidden');
 });
 
-// Close overlay when clicking outside popup
 batOverlay.addEventListener('click', (e) => {
   if (e.target === batOverlay) {
     batOverlay.classList.add('hidden');
@@ -105,7 +154,7 @@ socket.on('receiver-joined', () => {
 });
 
 socket.on('start-upload', () => {
-  statusText.textContent = 'Streaming 6 GB direct pipe to receiver...';
+  statusText.textContent = 'Streaming direct pipe to receiver...';
   const xhr = new XMLHttpRequest();
   xhr.open('POST', `/up/${currentCode}`);
 
@@ -113,7 +162,7 @@ socket.on('start-upload', () => {
     if (e.lengthComputable) {
       const pct = Math.round((e.loaded / e.total) * 100);
       progressFill.style.width = pct + '%';
-      statusText.textContent = `Streaming 6 GB direct pipe: ${pct}%`;
+      statusText.textContent = `Streaming file: ${pct}%`;
     }
   };
 

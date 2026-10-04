@@ -20,23 +20,24 @@
 
   <!-- Batman Signal Overlay -->
   <div id="batSignalOverlay" class="batsignal-overlay hidden">
-    <!-- Dark Mode: Rain Layer -->
+    <!-- Dark Mode: Rain Layer & Lightning Flash -->
+    <div class="lightning-flash" id="lightningLayer"></div>
     <div class="rain-container" id="rainLayer"></div>
 
-    <!-- Light Mode: Sunrise Sunlight Aura & Flares -->
+    <!-- Light Mode: Sunrise Aura, Rays & Lens Flare -->
     <div class="sun-flare-aura"></div>
     <div class="sun-rays"></div>
+    <div class="sun-particles" id="sunParticlesLayer"></div>
 
-    <!-- Dual Spotlights converging to center -->
+    <!-- Converging Spotlights -->
     <div class="light-beam beam-left"></div>
     <div class="light-beam beam-right"></div>
     <div class="center-spotlight-glow"></div>
 
-    <!-- Center Stage: Dark Knight Sharp Batman + Help Box -->
+    <!-- Center Stage: 3D Sharp Bat + Help Box (Containing 6GB limit) -->
     <div class="bat-stage">
       <div class="batman-logo-3d">
         <svg viewBox="0 0 1000 350" class="bat-svg">
-          <!-- Authentic Dark Knight Sharp Bat Silhouette -->
           <path d="M 0,110 Q 180,110 320,110 C 330,150 365,225 435,215 C 445,170 455,120 465,120 L 470,180 C 480,175 490,170 500,170 C 510,170 520,175 530,180 L 535,120 C 545,120 555,170 565,215 C 635,225 670,150 680,110 Q 820,110 1000,110 C 850,150 735,240 705,335 C 620,295 560,310 500,345 C 440,310 380,295 295,335 C 265,240 150,150 0,110 Z" />
         </svg>
       </div>
@@ -44,15 +45,18 @@
       <div class="help-popup-card">
         <h3>Mehra Share Help</h3>
         <p>1. <b>Bhejna:</b> File choose karein aur direct link dost ko bhejein.</p>
-        <p>2. <b>Receive:</b> Dost link khole aur direct peer connect ho jayega.</p>
-        <p>3. <b>6 GB Stream:</b> Large transfer ke dauran browser tab screen par open rakhein.</p>
+        <p>2. <b>Receive:</b> Dost link khole aur instant connect hokar download start hoga.</p>
+        <p>3. <b>Limit:</b> Single stream me maximum <b>6 GB</b> tak file transfer support karta hai.</p>
+        <p>4. <b>Streaming:</b> Large transfers ke dauran dono browser tabs open rakhein.</p>
       </div>
     </div>
   </div>
 
-  <!-- Main Card -->
+  <!-- Main Container with 3D Tilt Card -->
   <main class="main-container">
-    <div class="app-card">
+    <div class="app-card" id="tiltCard">
+      <div class="card-shine-effect" id="cardShine"></div>
+
       <h1 class="brand-title">Mehra Share</h1>
       <p class="tagline">Fast peer-to-peer file sharing between devices</p>
 
@@ -63,7 +67,7 @@
 
       <div id="senderSection" class="section-box hidden">
         <label class="drop-zone" for="fileInput">
-          <span id="fileLabel">📁 File choose karein (Max 6 GB)</span>
+          <span id="fileLabel">📁 File choose karein</span>
           <input type="file" id="fileInput" />
         </label>
         <button id="generateLinkBtn" class="core-btn action-submit-btn">Share Link Generate Karein</button>
