@@ -1,5 +1,20 @@
 const socket = io();
 
+// Rain generator for Batman dark mode
+const rainContainer = document.getElementById('rainLayer');
+function initRain() {
+  rainContainer.innerHTML = '';
+  for (let i = 0; i < 45; i++) {
+    const drop = document.createElement('div');
+    drop.className = 'drop';
+    drop.style.left = Math.random() * 100 + '%';
+    drop.style.animationDuration = (0.5 + Math.random() * 0.5) + 's';
+    drop.style.animationDelay = (Math.random() * 1.5) + 's';
+    rainContainer.appendChild(drop);
+  }
+}
+initRain();
+
 // Theme Toggle
 const themeBtn = document.getElementById('themeToggleBtn');
 const htmlEl = document.documentElement;
@@ -11,12 +26,19 @@ themeBtn.addEventListener('click', () => {
   themeBtn.textContent = nextTheme === 'dark' ? '☀️' : '🌙';
 });
 
-// Batman Help Torch Signal Toggle
+// Help Torch Overlay Toggle
 const helpBtn = document.getElementById('helpTorchBtn');
 const batOverlay = document.getElementById('batSignalOverlay');
 
 helpBtn.addEventListener('click', () => {
   batOverlay.classList.toggle('hidden');
+});
+
+// Close overlay when clicking outside popup
+batOverlay.addEventListener('click', (e) => {
+  if (e.target === batOverlay) {
+    batOverlay.classList.add('hidden');
+  }
 });
 
 // Tab Switchers
@@ -35,7 +57,7 @@ receiveViewBtn.addEventListener('click', () => {
   senderSection.classList.add('hidden');
 });
 
-// File Handling & Sockets
+// File Handling
 const fileInput = document.getElementById('fileInput');
 const fileLabel = document.getElementById('fileLabel');
 const generateLinkBtn = document.getElementById('generateLinkBtn');
@@ -52,7 +74,7 @@ let currentCode = null;
 fileInput.addEventListener('change', (e) => {
   if (e.target.files.length > 0) {
     selectedFile = e.target.files[0];
-    fileLabel.textContent = `${selectedFile.name} (${(selectedFile.size / (1024*1024)).toFixed(2)} MB)`;
+    fileLabel.textContent = `📁 ${selectedFile.name} (${(selectedFile.size / (1024*1024)).toFixed(2)} MB)`;
   }
 });
 
@@ -83,7 +105,7 @@ socket.on('receiver-joined', () => {
 });
 
 socket.on('start-upload', () => {
-  statusText.textContent = 'Uploading & Streaming directly to receiver...';
+  statusText.textContent = 'Streaming 6 GB direct pipe to receiver...';
   const xhr = new XMLHttpRequest();
   xhr.open('POST', `/up/${currentCode}`);
 
@@ -102,7 +124,7 @@ socket.on('start-upload', () => {
   xhr.send(selectedFile);
 });
 
-// Receiver Side Handling
+// Receiver
 const roomCodeInput = document.getElementById('roomCodeInput');
 const connectRoomBtn = document.getElementById('connectRoomBtn');
 
