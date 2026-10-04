@@ -101,3 +101,4 @@ server.listen(PORT, '0.0.0.0', () => {
   for (const l of Object.values(os.networkInterfaces()))
     for (const i of l) if (i.family === 'IPv4' && !i.internal) console.log('  Phone par   : http://' + i.address + ':' + PORT);
 });
+require('./keepalive');
