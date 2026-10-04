@@ -1,7 +1,13 @@
 {
   "name": "mehra-share",
   "version": "1.0.0",
+  "description": "Mehra Share 6GB P2P file sharing",
   "main": "server.js",
-  "scripts": { "start": "node server.js" },
-  "dependencies": { "ws": "^8.18.0" }
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5"
+  }
 }
