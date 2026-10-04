@@ -13,28 +13,24 @@
   <!-- Top Right Header Controls -->
   <header class="app-header">
     <div class="header-right">
-      <button id="themeToggleBtn" class="header-btn" title="Toggle Theme">☀️</button>
+      <button id="themeToggleBtn" class="header-btn" title="Toggle Theme">☀️️</button>
       <button id="helpTorchBtn" class="header-btn help-btn" title="Help">🔦 Help</button>
     </div>
   </header>
 
   <!-- Batman Signal Overlay -->
   <div id="batSignalOverlay" class="batsignal-overlay hidden">
-    <!-- Dark Mode: Rain Layer & Lightning Flash -->
     <div class="lightning-flash" id="lightningLayer"></div>
     <div class="rain-container" id="rainLayer"></div>
 
-    <!-- Light Mode: Sunrise Aura, Rays & Lens Flare -->
     <div class="sun-flare-aura"></div>
     <div class="sun-rays"></div>
     <div class="sun-particles" id="sunParticlesLayer"></div>
 
-    <!-- Converging Spotlights -->
     <div class="light-beam beam-left"></div>
     <div class="light-beam beam-right"></div>
     <div class="center-spotlight-glow"></div>
 
-    <!-- Center Stage: 3D Sharp Bat + Help Box (Containing 6GB limit) -->
     <div class="bat-stage">
       <div class="batman-logo-3d">
         <svg viewBox="0 0 1000 350" class="bat-svg">
@@ -44,15 +40,15 @@
 
       <div class="help-popup-card">
         <h3>Mehra Share Help</h3>
-        <p>1. <b>Bhejna:</b> File choose karein aur direct link dost ko bhejein.</p>
-        <p>2. <b>Receive:</b> Dost link khole aur instant connect hokar download start hoga.</p>
+        <p>1. <b>Bhejna:</b> File select karein aur screen par aaya <b>6-digit code</b> dost ko batayein.</p>
+        <p>2. <b>Receive:</b> Dost "Receive Karna hai" par jaakar wahi code daale.</p>
         <p>3. <b>Limit:</b> Single stream me maximum <b>6 GB</b> tak file transfer support karta hai.</p>
-        <p>4. <b>Streaming:</b> Large transfers ke dauran dono browser tabs open rakhein.</p>
+        <p>4. <b>Streaming:</b> Transfer ke dauran browser tab screen par khula rakhein.</p>
       </div>
     </div>
   </div>
 
-  <!-- Main Container with 3D Tilt Card -->
+  <!-- Main Card -->
   <main class="main-container">
     <div class="app-card" id="tiltCard">
       <div class="card-shine-effect" id="cardShine"></div>
@@ -65,20 +61,27 @@
         <button id="receiveViewBtn" class="core-btn secondary-btn">Receive Karna hai</button>
       </div>
 
-      <div id="senderSection" class="section-box hidden">
+      <!-- Sender Section -->
+      <div id="senderSection" class="section-box">
         <label class="drop-zone" for="fileInput">
           <span id="fileLabel">📁 File choose karein</span>
           <input type="file" id="fileInput" />
         </label>
-        <button id="generateLinkBtn" class="core-btn action-submit-btn">Share Link Generate Karein</button>
-        <div id="shareLinkContainer" class="share-box hidden">
-          <input type="text" id="shareUrlInput" readonly />
-          <button id="copyLinkBtn" class="core-btn">Copy</button>
+        <button id="generateCodeBtn" class="core-btn action-submit-btn">Code Generate Karein</button>
+        
+        <!-- 6-Digit Code Display Box -->
+        <div id="codeDisplayContainer" class="code-box-wrapper hidden">
+          <p class="code-helper-text">Ye 6-digit code receiver ko batayein:</p>
+          <div class="code-badge-row">
+            <span id="generatedCodeText" class="code-digits">------</span>
+            <button id="copyCodeBtn" class="code-copy-btn" title="Copy Code">📋 Copy</button>
+          </div>
         </div>
       </div>
 
+      <!-- Receiver Section -->
       <div id="receiverSection" class="section-box hidden">
-        <input type="text" id="roomCodeInput" class="text-input" placeholder="6-digit code enter karein" />
+        <input type="text" id="roomCodeInput" class="text-input" placeholder="6-digit code yahan daalein" maxlength="6" />
         <button id="connectRoomBtn" class="core-btn action-submit-btn">Connect & Download</button>
       </div>
 
