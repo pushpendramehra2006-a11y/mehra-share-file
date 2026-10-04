@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="hi"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mehra Share</title>
+<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#0b0f1e">
+<link rel="icon" href="icon.svg"><link rel="stylesheet" href="style.css">
+</head><body>
+<div class="bg"><i></i><i></i><i></i></div>
+<header><h1 class="mirror">Mehra Share</h1><p id="status">Taiyaar</p></header>
+<main>
+  <section id="home" class="screen active">
+    <div class="card tilt" id="goSend"><div class="ico">📱➜💻</div><h2>Bhejna hai</h2><p>Mobile → Laptop • Mobile → Mobile • Laptop → Laptop</p></div>
+    <div class="card tilt" id="goRecv"><div class="ico">💻➜📱</div><h2>Lena hai</h2><p>Laptop → Mobile ya koi bhi device se file lo</p></div>
+  </section>
+
+  <section id="send" class="screen">
+    <div class="card static"><p>Dusre device par "Lena hai" dabao aur ye code daalo:</p>
+      <div class="code" id="code">------</div>
+      <p style="text-align:center;margin-top:8px"><small id="link"></small></p></div>
+    <button class="btn ghost" data-back>← Wapas</button>
+  </section>
+
+  <section id="recv" class="screen">
+    <div class="card static"><p>Dusre device ka 6 ank ka code daalo:</p><br>
+      <input id="codeIn" inputmode="numeric" maxlength="6" placeholder="------"></div>
+    <button class="btn" id="joinBtn">Connect karo</button>
+    <button class="btn ghost" data-back>← Wapas</button>
+  </section>
+
+  <section id="transfer" class="screen">
+    <div class="picks">
+      <button class="btn" data-acc="image/*,video/*">🎬 Photo / Video</button>
+      <button class="btn" data-acc="audio/*">🎵 Audio / Gaana</button>
+      <button class="btn" data-acc=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.rar,.7z,application/*,text/*">📄 Documents / Zip</button>
+      <button class="btn" data-acc=".apk,application/vnd.android.package-archive">🤖 App (APK)</button>
+      <button class="btn ghost wide" data-acc="*/*">📁 Koi bhi file (File Manager se)</button>
+    </div>
+    <input type="file" id="file" multiple hidden>
+    <div id="list"></div>
+  </section>
+</main>
+<script src="app.js"></script>
+</body></html>

@@ -1,0 +1,41 @@
+*{box-sizing:border-box;margin:0}
+:root{--a:#7c5cff;--b:#00d4ff}
+body{min-height:100vh;font-family:system-ui,sans-serif;color:#eef;background:#0b0f1e;overflow-x:hidden;display:flex;flex-direction:column;align-items:center;padding:24px 16px;perspective:1200px}
+.bg{position:fixed;inset:0;z-index:-1}
+.bg i{position:absolute;width:40vmax;height:40vmax;border-radius:50%;filter:blur(90px);opacity:.45;animation:float 14s ease-in-out infinite alternate}
+.bg i:nth-child(1){background:var(--a);top:-10%;left:-10%}
+.bg i:nth-child(2){background:var(--b);bottom:-15%;right:-10%;animation-delay:-5s}
+.bg i:nth-child(3){background:#ff3d9a;top:40%;left:40%;width:25vmax;height:25vmax;animation-delay:-9s}
+@keyframes float{to{transform:translate(8vw,6vh) scale(1.2)}}
+header{text-align:center;margin-bottom:28px}
+.mirror{font-size:clamp(2.2rem,9vw,3.6rem);background:linear-gradient(90deg,#fff,var(--b),var(--a),#fff);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 4s linear infinite;-webkit-box-reflect:below -6px linear-gradient(transparent 55%,rgba(255,255,255,.3))}
+@keyframes shine{to{background-position:-300% 0}}
+#status{opacity:.7;margin-top:16px}
+main{width:100%;max-width:560px}
+.screen{display:none;flex-direction:column;gap:18px}
+.screen.active{display:flex;animation:in .6s cubic-bezier(.2,.8,.2,1)}
+@keyframes in{from{opacity:0;transform:rotateY(-25deg) translateY(30px) scale(.92)}}
+.card{position:relative;overflow:hidden;padding:22px;border-radius:22px;background:linear-gradient(135deg,rgba(255,255,255,.16),rgba(255,255,255,.04));border:1px solid rgba(255,255,255,.25);backdrop-filter:blur(14px);box-shadow:0 20px 50px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.4);transition:transform .15s;transform-style:preserve-3d;cursor:pointer;margin-bottom:16px}
+.card::after{content:"";position:absolute;top:0;left:-120%;width:60%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.35),transparent);transform:skewX(-20deg);animation:sweep 4s ease-in-out infinite;pointer-events:none}
+@keyframes sweep{60%,100%{left:160%}}
+.card .ico{font-size:2.4rem;transform:translateZ(40px)}
+.card h2{margin:8px 0 4px;transform:translateZ(30px)}
+.card p{opacity:.8;font-size:.9rem}
+.static,.item{cursor:default}
+.item{animation:in .5s}
+.code{font-size:3rem;letter-spacing:.3em;text-align:center;font-weight:800;margin-top:10px}
+input,button{font:inherit;border:0;border-radius:14px;padding:14px;color:#fff}
+input{background:rgba(255,255,255,.12);text-align:center;font-size:1.6rem;letter-spacing:.3em;width:100%;outline:1px solid rgba(255,255,255,.25)}
+.btn{background:linear-gradient(90deg,var(--a),var(--b));cursor:pointer;font-weight:700;width:100%;box-shadow:0 8px 24px rgba(124,92,255,.5)}
+.btn.ghost{background:rgba(255,255,255,.1);box-shadow:none}
+.bar{height:8px;border-radius:8px;background:rgba(255,255,255,.15);margin-top:10px;overflow:hidden}
+.bar b{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--b),var(--a));transition:width .15s}
+.name{font-weight:700;word-break:break-all}
+small{opacity:.75}
+.item video,.item img,.item audio{width:100%;border-radius:14px;margin-top:10px;max-height:320px}
+.item a{display:inline-block;margin-top:10px;color:var(--b);font-weight:700}
+.picks{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.picks .btn{font-size:.95rem;padding:16px 8px}
+.picks .wide{grid-column:1/-1}
+.item canvas{width:100%;height:90px;border-radius:12px;background:rgba(255,255,255,.06);margin-top:10px}
+.pct{font-size:2rem;font-weight:800;margin-top:8px}
