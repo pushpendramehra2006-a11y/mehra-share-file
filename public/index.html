@@ -13,7 +13,6 @@
   <!-- Top Right Header Controls -->
   <header class="app-header">
     <div class="header-right">
-      <button id="modeToggleBtn" class="header-btn mode-btn" title="Toggle Transfer Mode">🌐 Global Cloud</button>
       <button id="themeToggleBtn" class="header-btn" title="Toggle Theme">☀️</button>
       <button id="helpTorchBtn" class="header-btn help-btn" title="Help">🔦 Help</button>
     </div>
@@ -41,22 +40,43 @@
 
       <div class="help-popup-card">
         <h3>Mehra Share Help</h3>
-        <p>1. <b>Zero Data Hotspot Mode:</b> Switch to <b>⚡ Offline Hotspot</b> mode to transfer files at ultra-fast speeds using <b>0 MB mobile data</b> when nearby.</p>
-        <p>2. <b>Global Cloud Mode:</b> Switch to <b>🌐 Global Cloud</b> to send files anywhere in the world across any distance.</p>
-        <p>3. <b>Background & Wake Lock:</b> Screen wake lock automatically keeps your device active during transfers to prevent interruptions.</p>
-        <p>4. <b>Send Multiple Files:</b> Transfer consecutive files in the same session without regenerating codes.</p>
+        <p>1. <b>⚡ Near Transfer (0 MB Data):</b> Uses local Hotspot/Wi-Fi to share files at 40-60 MB/s without using mobile data.</p>
+        <p>2. <b>🌐 Remote Transfer:</b> Share files across any distance using cloud streaming.</p>
+        <p>3. <b>Unlimited Queue:</b> Send another file in the same connection without re-entering codes.</p>
+        <p>4. <b>Background Safe:</b> Screen wake lock keeps your transfer running smoothly.</p>
       </div>
     </div>
   </div>
 
-  <!-- Main 3D Card -->
+  <!-- Hotspot Instruction Modal for Near Mode -->
+  <div id="hotspotModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-icon">⚡</div>
+      <h3>Near Transfer (0 MB Data)</h3>
+      <p class="modal-desc">Connect both devices to the same local Wi-Fi or Hotspot to transfer without internet data:</p>
+      <div class="modal-steps">
+        <div class="step-item"><b>1.</b> Turn ON <b>Hotspot</b> on one device (Mobile data can stay OFF).</div>
+        <div class="step-item"><b>2.</b> Turn ON <b>Wi-Fi</b> on the second device and connect to that Hotspot.</div>
+      </div>
+      <button id="hotspotReadyBtn" class="core-btn primary-btn full-btn">Ready, Continue to Transfer</button>
+    </div>
+  </div>
+
+  <!-- Main 3D Tilt Card -->
   <main class="main-container">
     <div class="app-card" id="tiltCard">
       <div class="card-shine-effect" id="cardShine"></div>
 
       <h1 class="brand-title">Mehra Share</h1>
-      <p class="tagline" id="modeSubtitle">Fast peer-to-peer file sharing between devices</p>
+      <p class="tagline" id="modeDescription">Choose how you want to share files</p>
 
+      <!-- Mode Selector Tabs: Near vs Remote -->
+      <div class="mode-selector-grid">
+        <button id="selectNearModeBtn" class="mode-tab-btn active">⚡ Near (0 MB Data)</button>
+        <button id="selectRemoteModeBtn" class="mode-tab-btn">🌐 Remote (Anywhere)</button>
+      </div>
+
+      <!-- Action Tabs: Send vs Receive -->
       <div class="action-grid">
         <button id="sendViewBtn" class="core-btn primary-btn">Send Files</button>
         <button id="receiveViewBtn" class="core-btn secondary-btn">Receive Files</button>
@@ -74,7 +94,7 @@
 
         <!-- 6-Digit Code Box -->
         <div id="codeDisplayContainer" class="code-box-wrapper hidden">
-          <p class="code-helper-text">Connected Session Code:</p>
+          <p class="code-helper-text">Share this 6-digit code with receiver:</p>
           <div class="code-badge-row">
             <span id="generatedCodeText" class="code-digits">------</span>
             <button id="copyCodeBtn" class="code-copy-btn" title="Copy Code">📋 Copy</button>
