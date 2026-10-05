@@ -1,6 +1,6 @@
 const socket = io();
 
-// Screen Wake Lock API for background transfer protection
+// Wake Lock
 let wakeLock = null;
 const wakeLockStatus = document.getElementById('wakeLockStatus');
 
@@ -13,76 +13,18 @@ async function requestWakeLock() {
         if (wakeLockStatus) wakeLockStatus.classList.add('hidden');
       });
     }
-  } catch (err) {
-    console.log('Wake Lock error:', err);
-  }
+  } catch (err) {}
 }
 
 function releaseWakeLock() {
-  if (wakeLock !== null) {
-    wakeLock.release().then(() => {
-      wakeLock = null;
-    });
+  if (wakeLock) {
+    wakeLock.release().then(() => { wakeLock = null; });
   }
 }
 
-// Transfer Mode Toggle: Global Cloud vs Offline Hotspot (Zero Data)
-let isOfflineMode = false;
-const modeToggleBtn = document.getElementById('modeToggleBtn');
-const modeSubtitle = document.getElementById('modeSubtitle');
-
-modeToggleBtn.addEventListener('click', () => {
-  isOfflineMode = !isOfflineMode;
-  if (isOfflineMode) {
-    modeToggleBtn.textContent = '⚡ Offline Hotspot (0 Data)';
-    modeToggleBtn.style.borderColor = '#2ecc71';
-    modeSubtitle.textContent = 'Zero mobile data mode via local Wi-Fi / Hotspot';
-  } else {
-    modeToggleBtn.textContent = '🌐 Global Cloud';
-    modeToggleBtn.style.borderColor = '';
-    modeSubtitle.textContent = 'Fast peer-to-peer file sharing between devices';
-  }
-});
-
-// Rain generator
-const rainContainer = document.getElementById('rainLayer');
-function initRain() {
-  if (!rainContainer) return;
-  rainContainer.innerHTML = '';
-  for (let i = 0; i < 45; i++) {
-    const drop = document.createElement('div');
-    drop.className = 'drop';
-    drop.style.left = Math.random() * 100 + '%';
-    drop.style.animationDuration = (0.5 + Math.random() * 0.5) + 's';
-    drop.style.animationDelay = (Math.random() * 1.5) + 's';
-    rainContainer.appendChild(drop);
-  }
-}
-initRain();
-
-// Sunlight motes
-const sunMotesContainer = document.getElementById('sunParticlesLayer');
-function initSunMotes() {
-  if (!sunMotesContainer) return;
-  sunMotesContainer.innerHTML = '';
-  for (let i = 0; i < 25; i++) {
-    const mote = document.createElement('div');
-    mote.className = 'sun-mote';
-    const size = Math.random() * 5 + 3;
-    mote.style.width = size + 'px';
-    mote.style.height = size + 'px';
-    mote.style.left = Math.random() * 100 + '%';
-    mote.style.animationDuration = (4 + Math.random() * 4) + 's';
-    mote.style.animationDelay = (Math.random() * 4) + 's';
-    sunMotesContainer.appendChild(mote);
-  }
-}
-initSunMotes();
-
-// 3D Tilt & Glass Shine
+// 3D Card Tilt & Flash Shine
 const tiltCard = document.getElementById('tiltCard');
 const cardShine = document.getElementById('cardShine');
-
 if (tiltCard) {
   tiltCard.addEventListener('mousemove', (e) => {
     const rect = tiltCard.getBoundingClientRect();
@@ -98,17 +40,15 @@ if (tiltCard) {
       cardShine.style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(255, 255, 255, 0.28) 0%, transparent 60%)`;
     }
   });
-
   tiltCard.addEventListener('mouseleave', () => {
     tiltCard.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
     if (cardShine) cardShine.style.opacity = '0';
   });
 }
 
-// Theme Toggle
+// Theme & Overlay
 const themeBtn = document.getElementById('themeToggleBtn');
 const htmlEl = document.documentElement;
-
 themeBtn.addEventListener('click', () => {
   const currentTheme = htmlEl.getAttribute('data-theme');
   const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
@@ -116,21 +56,14 @@ themeBtn.addEventListener('click', () => {
   themeBtn.textContent = nextTheme === 'dark' ? '☀️' : '🌙';
 });
 
-// Help Overlay Toggle
 const helpBtn = document.getElementById('helpTorchBtn');
 const batOverlay = document.getElementById('batSignalOverlay');
-
-helpBtn.addEventListener('click', () => {
-  batOverlay.classList.toggle('hidden');
-});
-
+helpBtn.addEventListener('click', () => batOverlay.classList.toggle('hidden'));
 batOverlay.addEventListener('click', (e) => {
-  if (e.target === batOverlay) {
-    batOverlay.classList.add('hidden');
-  }
+  if (e.target === batOverlay) batOverlay.classList.add('hidden');
 });
 
-// Tab Switchers
+// Navigation
 const sendViewBtn = document.getElementById('sendViewBtn');
 const receiveViewBtn = document.getElementById('receiveViewBtn');
 const senderSection = document.getElementById('senderSection');
@@ -158,6 +91,52 @@ function formatBytes(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
+// WebRTC Direct P2P (Zero Data over Local Wi-Fi / Hotspot)
+let peerConn = null;
+let dataChannel = null;
+const rtcConfig = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' }
+  ]
+};
+
+function setupPeerConnection(isSender, roomCode) {
+  peerConn = new RTCPeerConnection(rtcConfig);
+
+  peerConn.onicecandidate = (event) => {
+    if (event.candidate) {
+      socket.emit('signal', { code: roomCode, candidate: event.candidate });
+    }
+  };
+
+  if (isSender) {
+    dataChannel = peerConn.createDataChannel('fileTransfer', { ordered: true });
+    setupDataChannel(dataChannel);
+  } else {
+    peerConn.ondatachannel = (event) => {
+      dataChannel = event.channel;
+      setupDataChannel(dataChannel);
+    };
+  }
+}
+
+// WebRTC Signaling listeners
+socket.on('signal', async (data) => {
+  if (data.desc) {
+    await peerConn.setRemoteDescription(new RTCSessionDescription(data.desc));
+    if (data.desc.type === 'offer') {
+      const answer = await peerConn.createAnswer();
+      await peerConn.setLocalDescription(answer);
+      socket.emit('signal', { code: currentCode, desc: peerConn.localDescription });
+    }
+  } else if (data.candidate) {
+    try {
+      await peerConn.addIceCandidate(new RTCIceCandidate(data.candidate));
+    } catch (e) {}
+  }
+});
+
 // Sender Logic
 const fileInput = document.getElementById('fileInput');
 const fileLabel = document.getElementById('fileLabel');
@@ -177,14 +156,6 @@ const progressFill = document.getElementById('progressFill');
 
 let selectedFile = null;
 let currentCode = null;
-let heartbeatInterval = null;
-
-function startHeartbeat() {
-  if (heartbeatInterval) clearInterval(heartbeatInterval);
-  heartbeatInterval = setInterval(() => {
-    if (currentCode) socket.emit('transfer-heartbeat', currentCode);
-  }, 25000);
-}
 
 fileInput.addEventListener('change', (e) => {
   if (e.target.files.length > 0) {
@@ -197,13 +168,12 @@ generateCodeBtn.addEventListener('click', () => {
   if (!selectedFile) return alert('Please choose a file first');
   currentCode = Math.floor(100000 + Math.random() * 900000).toString();
   socket.emit('create-room', currentCode);
-  
+
   generatedCodeText.textContent = currentCode;
   codeDisplayContainer.classList.remove('hidden');
   filePickerWrapper.classList.add('hidden');
   statusContainer.classList.remove('hidden');
-  statusText.textContent = `Session ready! Share code ${currentCode} with the receiver.`;
-  startHeartbeat();
+  statusText.textContent = `Session ready! Share code ${currentCode} with receiver.`;
   requestWakeLock();
 });
 
@@ -215,39 +185,122 @@ copyCodeBtn.addEventListener('click', () => {
   }
 });
 
-socket.on('receiver-joined', () => {
+socket.on('receiver-joined', async () => {
   statusContainer.classList.remove('hidden');
-  statusText.textContent = 'Receiver connected! Transfer starting...';
-  
-  socket.emit('file-meta', {
-    code: currentCode,
-    name: selectedFile.name,
-    size: selectedFile.size
-  });
+  statusText.textContent = 'Receiver connected! Establishing Zero-Data P2P Direct Link...';
+
+  setupPeerConnection(true, currentCode);
+  const offer = await peerConn.createOffer();
+  await peerConn.setLocalDescription(offer);
+  socket.emit('signal', { code: currentCode, desc: peerConn.localDescription });
 });
 
-socket.on('start-upload', () => {
-  statusText.textContent = `Streaming ${selectedFile.name} directly to receiver...`;
-  const xhr = new XMLHttpRequest();
-  xhr.open('POST', `/up/${currentCode}`);
+// Send file chunks directly over device-to-device DataChannel
+function sendFileDirectly(file) {
+  statusText.textContent = `⚡ Direct P2P Streaming: 0 MB mobile data used`;
+  dataChannel.send(JSON.stringify({ type: 'header', name: file.name, size: file.size }));
 
-  xhr.upload.onprogress = (e) => {
-    if (e.lengthComputable) {
-      const pct = Math.round((e.loaded / e.total) * 100);
+  const chunkSize = 64 * 1024; // 64 KB chunks
+  let offset = 0;
+
+  function readSlice() {
+    if (offset >= file.size) {
+      dataChannel.send(JSON.stringify({ type: 'eof' }));
+      progressFill.style.width = '100%';
+      statusText.textContent = `Transfer complete: ${file.name} (Direct Device-to-Device)`;
+      sendMoreContainer.classList.remove('hidden');
+      return;
+    }
+
+    if (dataChannel.bufferedAmount > 8 * 1024 * 1024) {
+      setTimeout(readSlice, 20);
+      return;
+    }
+
+    const slice = file.slice(offset, offset + chunkSize);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      dataChannel.send(e.target.result);
+      offset += e.target.result.byteLength;
+      const pct = Math.round((offset / file.size) * 100);
       progressFill.style.width = pct + '%';
-      statusText.textContent = `Transferring: ${pct}% (${formatBytes(e.loaded)} / ${formatBytes(e.total)})`;
+      statusText.textContent = `⚡ P2P Direct Sending: ${pct}% (${formatBytes(offset)} / ${formatBytes(file.size)})`;
+      readSlice();
+    };
+    reader.readAsArrayBuffer(slice);
+  }
+
+  readSlice();
+}
+
+// Receiver Logic
+const roomCodeInput = document.getElementById('roomCodeInput');
+const connectRoomBtn = document.getElementById('connectRoomBtn');
+
+connectRoomBtn.addEventListener('click', () => {
+  const code = roomCodeInput.value.trim();
+  if (!code || code.length !== 6) return alert('Please enter a 6-digit code');
+  currentCode = code;
+  socket.emit('join-room', code);
+  statusContainer.classList.remove('hidden');
+  statusText.textContent = 'Connecting to sender via Direct P2P...';
+  setupPeerConnection(false, code);
+  requestWakeLock();
+});
+
+// Setup DataChannel Receive Buffering
+let receivedBuffers = [];
+let incomingMeta = null;
+let receivedBytes = 0;
+
+function setupDataChannel(channel) {
+  channel.binaryType = 'arraybuffer';
+
+  channel.onopen = () => {
+    statusContainer.classList.remove('hidden');
+    statusText.textContent = '⚡ Connected! Direct Zero-Data Channel is ready.';
+    if (selectedFile && channel.readyState === 'open') {
+      sendFileDirectly(selectedFile);
     }
   };
 
-  xhr.onload = () => {
-    progressFill.style.width = '100%';
-    statusText.textContent = `Transfer complete: ${selectedFile.name}`;
-    sendMoreContainer.classList.remove('hidden');
+  channel.onmessage = (event) => {
+    if (typeof event.data === 'string') {
+      const msg = JSON.parse(event.data);
+      if (msg.type === 'header') {
+        incomingMeta = msg;
+        receivedBuffers = [];
+        receivedBytes = 0;
+        statusText.textContent = `⚡ Receiving ${incomingMeta.name} (0 Data Direct P2P)...`;
+      } else if (msg.type === 'eof') {
+        // Build file locally in browser and auto trigger download without internet
+        const blob = new Blob(receivedBuffers);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = incomingMeta.name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        progressFill.style.width = '100%';
+        statusText.textContent = `⚡ File saved to device! 0 MB mobile data used.`;
+        releaseWakeLock();
+      }
+    } else {
+      receivedBuffers.push(event.data);
+      receivedBytes += event.data.byteLength;
+      if (incomingMeta && incomingMeta.size) {
+        const pct = Math.round((receivedBytes / incomingMeta.size) * 100);
+        progressFill.style.width = pct + '%';
+        statusText.textContent = `⚡ Receiving (0 MB Data): ${pct}% (${formatBytes(receivedBytes)} / ${formatBytes(incomingMeta.size)})`;
+      }
+    }
   };
+}
 
-  xhr.send(selectedFile);
-});
-
+// Send Another File handler
 moreFileInput.addEventListener('change', (e) => {
   if (e.target.files.length > 0) {
     selectedFile = e.target.files[0];
@@ -257,40 +310,8 @@ moreFileInput.addEventListener('change', (e) => {
 });
 
 sendNextFileBtn.addEventListener('click', () => {
-  if (!selectedFile) return;
+  if (!selectedFile || !dataChannel || dataChannel.readyState !== 'open') return;
   sendNextFileBtn.classList.add('hidden');
   progressFill.style.width = '0%';
-  statusText.textContent = `Preparing to send ${selectedFile.name}...`;
-
-  socket.emit('file-meta', {
-    code: currentCode,
-    name: selectedFile.name,
-    size: selectedFile.size
-  });
-});
-
-// Receiver Logic
-const roomCodeInput = document.getElementById('roomCodeInput');
-const connectRoomBtn = document.getElementById('connectRoomBtn');
-
-connectRoomBtn.addEventListener('click', () => {
-  const code = roomCodeInput.value.trim();
-  if (!code || code.length !== 6) return alert('Please enter a valid 6-digit code');
-  currentCode = code;
-  socket.emit('join-room', code);
-  statusContainer.classList.remove('hidden');
-  statusText.textContent = 'Connecting to sender...';
-  startHeartbeat();
-  requestWakeLock();
-});
-
-socket.on('file-meta', (meta) => {
-  statusText.textContent = `Downloading ${meta.name} (${formatBytes(meta.size)})...`;
-  progressFill.style.width = '100%';
-  window.location.href = `/dl/${meta.code}?name=${encodeURIComponent(meta.name)}&size=${meta.size}`;
-});
-
-socket.on('file-completed', () => {
-  statusText.textContent = 'File received successfully! Ready for next file from sender.';
-  releaseWakeLock();
+  sendFileDirectly(selectedFile);
 });

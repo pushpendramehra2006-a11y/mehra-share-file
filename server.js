@@ -12,19 +12,17 @@ const io = new Server(server, {
   maxHttpBufferSize: 1e8
 });
 
-// Disable all socket/HTTP idle timeouts for long transfers (up to 1 TB)
 server.timeout = 0;
 server.keepAliveTimeout = 0;
 server.requestTimeout = 0;
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Room structure: code -> { sender, receiver, currentTransfer: { fileId, pendingRes } }
 const rooms = {};
 
 io.on('connection', (socket) => {
   socket.on('create-room', (code) => {
-    rooms[code] = { sender: socket.id, receiver: null, pendingRes: null };
+    rooms[code] = { sender: socket.id, receiver: null };
     socket.join(code);
     socket.emit('room-created', code);
   });
@@ -40,16 +38,9 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Handle meta for current or subsequent files in the same session
-  socket.on('file-meta', (data) => {
-    socket.to(data.code).emit('file-meta', data);
-  });
-
-  // Client pulse during transfer to prevent Render free-tier idling
-  socket.on('transfer-heartbeat', (code) => {
-    if (rooms[code]) {
-      socket.to(code).emit('peer-heartbeat');
-    }
+  // WebRTC Signal Forwarder (Zero data P2P)
+  socket.on('signal', (data) => {
+    socket.to(data.code).emit('signal', data);
   });
 
   socket.on('disconnect', () => {
@@ -62,55 +53,9 @@ io.on('connection', (socket) => {
   });
 });
 
-// Direct zero-buffer streaming pipe for uploads
-app.post('/up/:code', (req, res) => {
-  const code = req.params.code;
-  const room = rooms[code];
-
-  if (!room || !room.pendingRes) {
-    return res.status(400).send('Receiver not ready');
-  }
-
-  req.pipe(room.pendingRes);
-
-  req.on('end', () => {
-    room.pendingRes = null;
-    res.status(200).send('OK');
-    io.to(code).emit('file-completed');
-  });
-
-  req.on('error', () => {
-    if (room.pendingRes) {
-      room.pendingRes.end();
-      room.pendingRes = null;
-    }
-    res.status(500).send('Stream error');
-  });
-});
-
-// Receiver stream endpoint
-app.get('/dl/:code', (req, res) => {
-  const code = req.params.code;
-  const room = rooms[code];
-
-  if (!room) {
-    return res.status(404).send('Session expired');
-  }
-
-  const name = req.query.name || 'file';
-  const size = req.query.size || '';
-
-  res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(name)}"`);
-  res.setHeader('Content-Type', 'application/octet-stream');
-  if (size) res.setHeader('Content-Length', size);
-
-  room.pendingRes = res;
-  io.to(room.sender).emit('start-upload', { code });
-});
-
 require('./keepalive');
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`Mehra Share running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
