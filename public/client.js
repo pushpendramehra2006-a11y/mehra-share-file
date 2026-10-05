@@ -1,9 +1,8 @@
 const socket = io();
 
-// Screen Wake Lock
+// Wake Lock
 let wakeLock = null;
 const wakeLockStatus = document.getElementById('wakeLockStatus');
-
 async function requestWakeLock() {
   try {
     if ('wakeLock' in navigator) {
@@ -15,14 +14,139 @@ async function requestWakeLock() {
     }
   } catch (err) {}
 }
-
 function releaseWakeLock() {
-  if (wakeLock) {
-    wakeLock.release().then(() => { wakeLock = null; });
-  }
+  if (wakeLock) wakeLock.release().then(() => { wakeLock = null; });
 }
 
-// Mode Selection: Near (0 Data Hotspot) vs Remote
+// -------------------------------------------------------------
+// REAL-TIME SPEED & OS FILE COPY GRAPH ENGINE (Canvas Wave)
+// -------------------------------------------------------------
+const canvas = document.getElementById('transferGraphCanvas');
+const ctx = canvas ? canvas.getContext('2d') : null;
+const speedMetric = document.getElementById('speedMetric');
+const transferredAmountText = document.getElementById('transferredAmountText');
+const etaText = document.getElementById('etaText');
+
+let speedHistory = new Array(50).fill(0);
+let lastTransferredBytes = 0;
+let lastTimestamp = Date.now();
+let graphInterval = null;
+
+function resizeCanvas() {
+  if (!canvas) return;
+  canvas.width = canvas.parentElement.clientWidth * window.devicePixelRatio;
+  canvas.height = canvas.parentElement.clientHeight * window.devicePixelRatio;
+  if (ctx) ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+}
+window.addEventListener('resize', resizeCanvas);
+window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 200));
+
+function renderGraph() {
+  if (!ctx || !canvas) return;
+  const w = canvas.parentElement.clientWidth;
+  const h = canvas.parentElement.clientHeight;
+
+  ctx.clearRect(0, 0, w, h);
+
+  // Background Grid Lines (Like Windows Explorer Copy Graph)
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+  ctx.lineWidth = 1;
+  for (let y = 0; y < h; y += 20) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(w, y);
+    ctx.stroke();
+  }
+
+  // Draw Smooth Gradient Speed Wave
+  const maxSpeed = Math.max(...speedHistory, 5); // Minimum 5 MB/s scale ceiling
+  const step = w / (speedHistory.length - 1);
+
+  ctx.beginPath();
+  ctx.moveTo(0, h);
+
+  for (let i = 0; i < speedHistory.length; i++) {
+    const val = speedHistory[i];
+    const normalizedY = h - (val / maxSpeed) * (h - 12);
+    ctx.lineTo(i * step, normalizedY);
+  }
+  ctx.lineTo(w, h);
+  ctx.closePath();
+
+  const gradient = ctx.createLinearGradient(0, 0, 0, h);
+  gradient.addColorStop(0, 'rgba(0, 194, 255, 0.45)');
+  gradient.addColorStop(1, 'rgba(120, 98, 249, 0.02)');
+  ctx.fillStyle = gradient;
+  ctx.fill();
+
+  // Top Stroke Line
+  ctx.beginPath();
+  for (let i = 0; i < speedHistory.length; i++) {
+    const val = speedHistory[i];
+    const normalizedY = h - (val / maxSpeed) * (h - 12);
+    if (i === 0) ctx.moveTo(0, normalizedY);
+    else ctx.lineTo(i * step, normalizedY);
+  }
+  ctx.strokeStyle = '#00c2ff';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
+
+function startGraphEngine() {
+  resizeCanvas();
+  speedHistory.fill(0);
+  lastTimestamp = Date.now();
+  if (graphInterval) clearInterval(graphInterval);
+
+  graphInterval = setInterval(() => {
+    renderGraph();
+  }, 100);
+}
+
+function stopGraphEngine() {
+  if (graphInterval) clearInterval(graphInterval);
+  speedMetric.textContent = '0.0 MB/s';
+  etaText.textContent = 'Done';
+}
+
+function recordProgress(currentBytes, totalBytes) {
+  const now = Date.now();
+  const timeDiff = (now - lastTimestamp) / 1000;
+
+  if (timeDiff >= 0.4) {
+    const bytesDiff = currentBytes - lastTransferredBytes;
+    const speedMBps = (bytesDiff / (1024 * 1024)) / timeDiff; // Speed in MB/s
+    
+    speedHistory.push(speedMBps);
+    speedHistory.shift();
+
+    speedMetric.textContent = `${speedMBps.toFixed(1)} MB/s`;
+
+    // Calculate Estimated Time Remaining (ETA)
+    const remainingBytes = totalBytes - currentBytes;
+    if (speedMBps > 0.05 && remainingBytes > 0) {
+      const remainingSeconds = Math.round(remainingBytes / (speedMBps * 1024 * 1024));
+      if (remainingSeconds < 60) {
+        etaText.textContent = `${remainingSeconds}s remaining`;
+      } else {
+        const mins = Math.floor(remainingSeconds / 60);
+        const secs = remainingSeconds % 60;
+        etaText.textContent = `${mins}m ${secs}s remaining`;
+      }
+    } else {
+      etaText.textContent = 'Calculating ETA...';
+    }
+
+    lastTransferredBytes = currentBytes;
+    lastTimestamp = now;
+  }
+
+  transferredAmountText.textContent = `${formatBytes(currentBytes)} / ${formatBytes(totalBytes)}`;
+}
+
+// -------------------------------------------------------------
+// UI Modes, 3D Tilt & Orientation Adaptations
+// -------------------------------------------------------------
 let isNearMode = true;
 const selectNearModeBtn = document.getElementById('selectNearModeBtn');
 const selectRemoteModeBtn = document.getElementById('selectRemoteModeBtn');
@@ -46,26 +170,24 @@ selectRemoteModeBtn.addEventListener('click', () => {
   hotspotModal.classList.add('hidden');
 });
 
-hotspotReadyBtn.addEventListener('click', () => {
-  hotspotModal.classList.add('hidden');
-});
+hotspotReadyBtn.addEventListener('click', () => hotspotModal.classList.add('hidden'));
 
-// 3D Card Tilt
+// 3D Card Tilt (Only on devices with pointer/mouse for responsiveness)
 const tiltCard = document.getElementById('tiltCard');
 const cardShine = document.getElementById('cardShine');
-if (tiltCard) {
+if (tiltCard && window.matchMedia("(hover: hover)").matches) {
   tiltCard.addEventListener('mousemove', (e) => {
     const rect = tiltCard.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     const centerX = rect.width / 2;
     const centerY = rect.height / 2;
-    const rotateX = ((y - centerY) / centerY) * -10;
-    const rotateY = ((x - centerX) / centerX) * 10;
-    tiltCard.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+    const rotateX = ((y - centerY) / centerY) * -8;
+    const rotateY = ((x - centerX) / centerX) * 8;
+    tiltCard.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.01, 1.01, 1.01)`;
     if (cardShine) {
       cardShine.style.opacity = '1';
-      cardShine.style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(255, 255, 255, 0.28) 0%, transparent 60%)`;
+      cardShine.style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(255, 255, 255, 0.25) 0%, transparent 60%)`;
     }
   });
   tiltCard.addEventListener('mouseleave', () => {
@@ -74,7 +196,7 @@ if (tiltCard) {
   });
 }
 
-// Theme & Help
+// Themes & Batman Torch
 const themeBtn = document.getElementById('themeToggleBtn');
 const htmlEl = document.documentElement;
 themeBtn.addEventListener('click', () => {
@@ -87,11 +209,9 @@ themeBtn.addEventListener('click', () => {
 const helpBtn = document.getElementById('helpTorchBtn');
 const batOverlay = document.getElementById('batSignalOverlay');
 helpBtn.addEventListener('click', () => batOverlay.classList.toggle('hidden'));
-batOverlay.addEventListener('click', (e) => {
-  if (e.target === batOverlay) batOverlay.classList.add('hidden');
-});
+batOverlay.addEventListener('click', (e) => { if (e.target === batOverlay) batOverlay.classList.add('hidden'); });
 
-// View Switching
+// View Switch
 const sendViewBtn = document.getElementById('sendViewBtn');
 const receiveViewBtn = document.getElementById('receiveViewBtn');
 const senderSection = document.getElementById('senderSection');
@@ -119,28 +239,22 @@ function formatBytes(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-// WebRTC Direct P2P Setup for Near Mode
+// -------------------------------------------------------------
+// WEBRTC P2P & TRANSFER CORE
+// -------------------------------------------------------------
 let peerConn = null;
 let dataChannel = null;
 let isWebRTCActive = false;
-
 const rtcConfig = {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' }
-  ],
+  iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }],
   iceCandidatePoolSize: 10
 };
 
 function setupPeerConnection(isSender, roomCode) {
   peerConn = new RTCPeerConnection(rtcConfig);
-
   peerConn.onicecandidate = (event) => {
-    if (event.candidate) {
-      socket.emit('signal', { code: roomCode, candidate: event.candidate });
-    }
+    if (event.candidate) socket.emit('signal', { code: roomCode, candidate: event.candidate });
   };
-
   if (isSender) {
     dataChannel = peerConn.createDataChannel('directP2PChannel', { ordered: true });
     setupDataChannelEvents(dataChannel, true);
@@ -218,9 +332,10 @@ copyCodeBtn.addEventListener('click', () => {
 
 socket.on('receiver-joined', async () => {
   statusContainer.classList.remove('hidden');
-  
+  startGraphEngine();
+
   if (isNearMode) {
-    statusText.textContent = '⚡ Pairing via Near Mode (0 MB Data)...';
+    statusText.textContent = '⚡ Pairing Near Mode (0 MB Data)...';
     setupPeerConnection(true, currentCode);
     try {
       const offer = await peerConn.createOffer();
@@ -228,21 +343,21 @@ socket.on('receiver-joined', async () => {
       socket.emit('signal', { code: currentCode, desc: peerConn.localDescription });
     } catch (e) {}
 
-    // Fallback if local connection fails
     setTimeout(() => {
       if (!isWebRTCActive) {
         socket.emit('file-meta', { code: currentCode, name: selectedFile.name, size: selectedFile.size });
       }
     }, 2500);
   } else {
-    statusText.textContent = '🌐 Receiver connected! Starting remote stream...';
+    statusText.textContent = '🌐 Streaming file to receiver...';
     socket.emit('file-meta', { code: currentCode, name: selectedFile.name, size: selectedFile.size });
   }
 });
 
-// Near Mode Direct Transfer Function
 function sendFileNearMode(file) {
-  statusText.textContent = `⚡ Transferring ${file.name} (0 Data Direct Link)...`;
+  statusText.textContent = `⚡ Copying: ${file.name}`;
+  startGraphEngine();
+  lastTransferredBytes = 0;
   dataChannel.send(JSON.stringify({ type: 'header', name: file.name, size: file.size }));
 
   const chunkSize = 64 * 1024;
@@ -252,7 +367,8 @@ function sendFileNearMode(file) {
     if (offset >= file.size) {
       dataChannel.send(JSON.stringify({ type: 'eof' }));
       progressFill.style.width = '100%';
-      statusText.textContent = `⚡ Sent ${file.name}! Exactly 0 MB Data used.`;
+      statusText.textContent = `Transfer complete: ${file.name}`;
+      stopGraphEngine();
       sendMoreContainer.classList.remove('hidden');
       return;
     }
@@ -269,7 +385,7 @@ function sendFileNearMode(file) {
       offset += e.target.result.byteLength;
       const pct = Math.round((offset / file.size) * 100);
       progressFill.style.width = pct + '%';
-      statusText.textContent = `⚡ 0 Data Transfer: ${pct}% (${formatBytes(offset)} / ${formatBytes(file.size)})`;
+      recordProgress(offset, file.size);
       sendNextChunk();
     };
     reader.readAsArrayBuffer(slice);
@@ -281,7 +397,10 @@ function sendFileNearMode(file) {
 // Remote Mode Stream Upload
 socket.on('start-upload', () => {
   if (isNearMode && isWebRTCActive) return;
-  statusText.textContent = `🌐 Streaming ${selectedFile.name} to receiver...`;
+  statusText.textContent = `🌐 Copying ${selectedFile.name}...`;
+  startGraphEngine();
+  lastTransferredBytes = 0;
+
   const xhr = new XMLHttpRequest();
   xhr.open('POST', `/up/${currentCode}`);
 
@@ -289,13 +408,14 @@ socket.on('start-upload', () => {
     if (e.lengthComputable) {
       const pct = Math.round((e.loaded / e.total) * 100);
       progressFill.style.width = pct + '%';
-      statusText.textContent = `🌐 Remote Streaming: ${pct}% (${formatBytes(e.loaded)} / ${formatBytes(e.total)})`;
+      recordProgress(e.loaded, e.total);
     }
   };
 
   xhr.onload = () => {
     progressFill.style.width = '100%';
     statusText.textContent = `Transfer complete: ${selectedFile.name}`;
+    stopGraphEngine();
     sendMoreContainer.classList.remove('hidden');
   };
 
@@ -313,10 +433,7 @@ connectRoomBtn.addEventListener('click', () => {
   socket.emit('join-room', code);
   statusContainer.classList.remove('hidden');
   statusText.textContent = 'Connecting to sender...';
-  
-  if (isNearMode) {
-    setupPeerConnection(false, code);
-  }
+  if (isNearMode) setupPeerConnection(false, code);
   requestWakeLock();
 });
 
@@ -330,7 +447,7 @@ function setupDataChannelEvents(channel, isSender) {
   channel.onopen = () => {
     isWebRTCActive = true;
     statusContainer.classList.remove('hidden');
-    statusText.textContent = '⚡ Direct link connected! Zero data transfer ready.';
+    statusText.textContent = '⚡ Connected via 0 Data Direct Link';
     if (isSender && selectedFile) {
       sendFileNearMode(selectedFile);
     }
@@ -343,7 +460,9 @@ function setupDataChannelEvents(channel, isSender) {
         incomingMeta = msg;
         receivedBuffers = [];
         receivedBytes = 0;
-        statusText.textContent = `⚡ Receiving ${incomingMeta.name} (0 Data)...`;
+        lastTransferredBytes = 0;
+        statusText.textContent = `Receiving: ${incomingMeta.name}`;
+        startGraphEngine();
       } else if (msg.type === 'eof') {
         const blob = new Blob(receivedBuffers);
         const url = URL.createObjectURL(blob);
@@ -356,7 +475,8 @@ function setupDataChannelEvents(channel, isSender) {
         URL.revokeObjectURL(url);
 
         progressFill.style.width = '100%';
-        statusText.textContent = `✅ Saved to Device! Exactly 0 MB Internet used.`;
+        statusText.textContent = `File saved! Exactly 0 MB Internet used.`;
+        stopGraphEngine();
         releaseWakeLock();
       }
     } else {
@@ -365,26 +485,27 @@ function setupDataChannelEvents(channel, isSender) {
       if (incomingMeta && incomingMeta.size) {
         const pct = Math.round((receivedBytes / incomingMeta.size) * 100);
         progressFill.style.width = pct + '%';
-        statusText.textContent = `⚡ 0 Data Download: ${pct}% (${formatBytes(receivedBytes)} / ${formatBytes(incomingMeta.size)})`;
+        recordProgress(receivedBytes, incomingMeta.size);
       }
     }
   };
 }
 
-// Remote Mode fallback receiver download
+// Remote Fallback
 socket.on('file-meta', (meta) => {
   if (isNearMode && isWebRTCActive) return;
-  statusText.textContent = `🌐 Downloading ${meta.name} (${formatBytes(meta.size)})...`;
+  statusText.textContent = `Downloading ${meta.name}...`;
   progressFill.style.width = '100%';
   window.location.href = `/dl/${meta.code}?name=${encodeURIComponent(meta.name)}&size=${meta.size}`;
 });
 
 socket.on('file-completed', () => {
-  statusText.textContent = 'File received successfully! Ready for next file from sender.';
+  statusText.textContent = 'File received successfully!';
+  stopGraphEngine();
   releaseWakeLock();
 });
 
-// Send Another File handler
+// Multi-File
 moreFileInput.addEventListener('change', (e) => {
   if (e.target.files.length > 0) {
     selectedFile = e.target.files[0];
@@ -397,14 +518,9 @@ sendNextFileBtn.addEventListener('click', () => {
   if (!selectedFile) return;
   sendNextFileBtn.classList.add('hidden');
   progressFill.style.width = '0%';
-  
   if (isNearMode && isWebRTCActive && dataChannel && dataChannel.readyState === 'open') {
     sendFileNearMode(selectedFile);
   } else {
-    socket.emit('file-meta', {
-      code: currentCode,
-      name: selectedFile.name,
-      size: selectedFile.size
-    });
+    socket.emit('file-meta', { code: currentCode, name: selectedFile.name, size: selectedFile.size });
   }
 });

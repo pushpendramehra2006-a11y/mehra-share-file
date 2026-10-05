@@ -2,7 +2,7 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Mehra Share</title>
   <link rel="manifest" href="/manifest.json">
   <link rel="stylesheet" href="/style.css">
@@ -10,7 +10,7 @@
 </head>
 <body>
 
-  <!-- Top Right Header Controls -->
+  <!-- Top Header Controls -->
   <header class="app-header">
     <div class="header-right">
       <button id="themeToggleBtn" class="header-btn" title="Toggle Theme">☀️</button>
@@ -22,11 +22,9 @@
   <div id="batSignalOverlay" class="batsignal-overlay hidden">
     <div class="lightning-flash" id="lightningLayer"></div>
     <div class="rain-container" id="rainLayer"></div>
-
     <div class="sun-flare-aura"></div>
     <div class="sun-rays"></div>
     <div class="sun-particles" id="sunParticlesLayer"></div>
-
     <div class="light-beam beam-left"></div>
     <div class="light-beam beam-right"></div>
     <div class="center-spotlight-glow"></div>
@@ -40,15 +38,15 @@
 
       <div class="help-popup-card">
         <h3>Mehra Share Help</h3>
-        <p>1. <b>⚡ Near Transfer (0 MB Data):</b> Uses local Hotspot/Wi-Fi to share files at 40-60 MB/s without using mobile data.</p>
-        <p>2. <b>🌐 Remote Transfer:</b> Share files across any distance using cloud streaming.</p>
-        <p>3. <b>Unlimited Queue:</b> Send another file in the same connection without re-entering codes.</p>
-        <p>4. <b>Background Safe:</b> Screen wake lock keeps your transfer running smoothly.</p>
+        <p>1. <b>⚡ Near Transfer (0 MB Data):</b> Share directly over local Wi-Fi / Hotspot at 40-60 MB/s without mobile data.</p>
+        <p>2. <b>🌐 Remote Transfer:</b> Share files across long distances via cloud streaming pipe.</p>
+        <p>3. <b>Live Speed Graph:</b> Watch live copy speed (MB/s) and visual wave graph during file transfer.</p>
+        <p>4. <b>Multi-File:</b> Transfer files continuously in the same connection without re-entering codes.</p>
       </div>
     </div>
   </div>
 
-  <!-- Hotspot Instruction Modal for Near Mode -->
+  <!-- Hotspot Instruction Modal -->
   <div id="hotspotModal" class="modal-overlay hidden">
     <div class="modal-card">
       <div class="modal-icon">⚡</div>
@@ -62,7 +60,7 @@
     </div>
   </div>
 
-  <!-- Main 3D Tilt Card -->
+  <!-- Main Card -->
   <main class="main-container">
     <div class="app-card" id="tiltCard">
       <div class="card-shine-effect" id="cardShine"></div>
@@ -70,13 +68,13 @@
       <h1 class="brand-title">Mehra Share</h1>
       <p class="tagline" id="modeDescription">Choose how you want to share files</p>
 
-      <!-- Mode Selector Tabs: Near vs Remote -->
+      <!-- Mode Selector -->
       <div class="mode-selector-grid">
         <button id="selectNearModeBtn" class="mode-tab-btn active">⚡ Near (0 MB Data)</button>
         <button id="selectRemoteModeBtn" class="mode-tab-btn">🌐 Remote (Anywhere)</button>
       </div>
 
-      <!-- Action Tabs: Send vs Receive -->
+      <!-- Action Tabs -->
       <div class="action-grid">
         <button id="sendViewBtn" class="core-btn primary-btn">Send Files</button>
         <button id="receiveViewBtn" class="core-btn secondary-btn">Receive Files</button>
@@ -92,7 +90,6 @@
           <button id="generateCodeBtn" class="core-btn action-submit-btn">Generate Code</button>
         </div>
 
-        <!-- 6-Digit Code Box -->
         <div id="codeDisplayContainer" class="code-box-wrapper hidden">
           <p class="code-helper-text">Share this 6-digit code with receiver:</p>
           <div class="code-badge-row">
@@ -101,7 +98,6 @@
           </div>
         </div>
 
-        <!-- Send Another File Action -->
         <div id="sendMoreContainer" class="send-more-box hidden">
           <label class="core-btn secondary-btn send-more-label" for="moreFileInput">
             ➕ Choose Another File
@@ -117,10 +113,25 @@
         <button id="connectRoomBtn" class="core-btn action-submit-btn">Connect & Download</button>
       </div>
 
-      <!-- Live Transfer Status -->
+      <!-- Live File Copy & Graph Dashboard (Laptop / Mobile) -->
       <div id="statusContainer" class="status-box hidden">
-        <p id="statusText">Connecting...</p>
+        <div class="transfer-header-row">
+          <span id="statusText" class="transfer-title-text">Transferring...</span>
+          <span id="speedMetric" class="speed-badge">0.0 MB/s</span>
+        </div>
+
+        <!-- Realtime Live Graph Canvas (Like OS File Copy Dialog) -->
+        <div class="graph-card">
+          <canvas id="transferGraphCanvas"></canvas>
+        </div>
+
+        <!-- Progress Details Bar -->
         <div class="progress-bar-bg"><div id="progressFill" class="progress-bar-fill"></div></div>
+        
+        <div class="transfer-meta-footer">
+          <span id="transferredAmountText">0 MB / 0 MB</span>
+          <span id="etaText">Estimating time...</span>
+        </div>
         <p id="wakeLockStatus" class="wakelock-pill hidden">🔒 Background Active</p>
       </div>
     </div>
