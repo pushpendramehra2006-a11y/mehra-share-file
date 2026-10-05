@@ -1,5 +1,49 @@
 const socket = io();
 
+// Screen Wake Lock API for background transfer protection
+let wakeLock = null;
+const wakeLockStatus = document.getElementById('wakeLockStatus');
+
+async function requestWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+      if (wakeLockStatus) wakeLockStatus.classList.remove('hidden');
+      wakeLock.addEventListener('release', () => {
+        if (wakeLockStatus) wakeLockStatus.classList.add('hidden');
+      });
+    }
+  } catch (err) {
+    console.log('Wake Lock error:', err);
+  }
+}
+
+function releaseWakeLock() {
+  if (wakeLock !== null) {
+    wakeLock.release().then(() => {
+      wakeLock = null;
+    });
+  }
+}
+
+// Transfer Mode Toggle: Global Cloud vs Offline Hotspot (Zero Data)
+let isOfflineMode = false;
+const modeToggleBtn = document.getElementById('modeToggleBtn');
+const modeSubtitle = document.getElementById('modeSubtitle');
+
+modeToggleBtn.addEventListener('click', () => {
+  isOfflineMode = !isOfflineMode;
+  if (isOfflineMode) {
+    modeToggleBtn.textContent = '⚡ Offline Hotspot (0 Data)';
+    modeToggleBtn.style.borderColor = '#2ecc71';
+    modeSubtitle.textContent = 'Zero mobile data mode via local Wi-Fi / Hotspot';
+  } else {
+    modeToggleBtn.textContent = '🌐 Global Cloud';
+    modeToggleBtn.style.borderColor = '';
+    modeSubtitle.textContent = 'Fast peer-to-peer file sharing between devices';
+  }
+});
+
 // Rain generator
 const rainContainer = document.getElementById('rainLayer');
 function initRain() {
@@ -35,7 +79,7 @@ function initSunMotes() {
 }
 initSunMotes();
 
-// 3D Card Tilt & Flash Shine
+// 3D Tilt & Glass Shine
 const tiltCard = document.getElementById('tiltCard');
 const cardShine = document.getElementById('cardShine');
 
@@ -106,7 +150,6 @@ receiveViewBtn.addEventListener('click', () => {
   senderSection.classList.add('hidden');
 });
 
-// Format readable size up to 1 TB
 function formatBytes(bytes) {
   if (bytes === 0) return '0 B';
   const k = 1024;
@@ -134,14 +177,13 @@ const progressFill = document.getElementById('progressFill');
 
 let selectedFile = null;
 let currentCode = null;
-let isReceiverConnected = false;
 let heartbeatInterval = null;
 
 function startHeartbeat() {
   if (heartbeatInterval) clearInterval(heartbeatInterval);
   heartbeatInterval = setInterval(() => {
     if (currentCode) socket.emit('transfer-heartbeat', currentCode);
-  }, 30000);
+  }, 25000);
 }
 
 fileInput.addEventListener('change', (e) => {
@@ -162,6 +204,7 @@ generateCodeBtn.addEventListener('click', () => {
   statusContainer.classList.remove('hidden');
   statusText.textContent = `Session ready! Share code ${currentCode} with the receiver.`;
   startHeartbeat();
+  requestWakeLock();
 });
 
 copyCodeBtn.addEventListener('click', () => {
@@ -173,7 +216,6 @@ copyCodeBtn.addEventListener('click', () => {
 });
 
 socket.on('receiver-joined', () => {
-  isReceiverConnected = true;
   statusContainer.classList.remove('hidden');
   statusText.textContent = 'Receiver connected! Transfer starting...';
   
@@ -193,7 +235,7 @@ socket.on('start-upload', () => {
     if (e.lengthComputable) {
       const pct = Math.round((e.loaded / e.total) * 100);
       progressFill.style.width = pct + '%';
-      statusText.textContent = `Transferring ${selectedFile.name}: ${pct}% (${formatBytes(e.loaded)} / ${formatBytes(e.total)})`;
+      statusText.textContent = `Transferring: ${pct}% (${formatBytes(e.loaded)} / ${formatBytes(e.total)})`;
     }
   };
 
@@ -206,7 +248,6 @@ socket.on('start-upload', () => {
   xhr.send(selectedFile);
 });
 
-// "Send Another File" Handler in the same session
 moreFileInput.addEventListener('change', (e) => {
   if (e.target.files.length > 0) {
     selectedFile = e.target.files[0];
@@ -221,7 +262,6 @@ sendNextFileBtn.addEventListener('click', () => {
   progressFill.style.width = '0%';
   statusText.textContent = `Preparing to send ${selectedFile.name}...`;
 
-  // Notify receiver in the same connected room
   socket.emit('file-meta', {
     code: currentCode,
     name: selectedFile.name,
@@ -241,6 +281,7 @@ connectRoomBtn.addEventListener('click', () => {
   statusContainer.classList.remove('hidden');
   statusText.textContent = 'Connecting to sender...';
   startHeartbeat();
+  requestWakeLock();
 });
 
 socket.on('file-meta', (meta) => {
@@ -251,4 +292,5 @@ socket.on('file-meta', (meta) => {
 
 socket.on('file-completed', () => {
   statusText.textContent = 'File received successfully! Ready for next file from sender.';
+  releaseWakeLock();
 });

@@ -10,8 +10,10 @@
 </head>
 <body>
 
+  <!-- Top Right Header Controls -->
   <header class="app-header">
     <div class="header-right">
+      <button id="modeToggleBtn" class="header-btn mode-btn" title="Toggle Transfer Mode">🌐 Global Cloud</button>
       <button id="themeToggleBtn" class="header-btn" title="Toggle Theme">☀️</button>
       <button id="helpTorchBtn" class="header-btn help-btn" title="Help">🔦 Help</button>
     </div>
@@ -39,10 +41,10 @@
 
       <div class="help-popup-card">
         <h3>Mehra Share Help</h3>
-        <p>1. <b>Send:</b> Select a file and share the <b>6-digit code</b> once with the receiver.</p>
-        <p>2. <b>Send More Files:</b> After a file finishes, click <b>"Send Another File"</b> to transfer more files in the same session without re-entering the code.</p>
-        <p>3. <b>Limit:</b> Supports zero-RAM high-speed streaming up to <b>1 TB</b>.</p>
-        <p>4. <b>Streaming:</b> Keep the browser tab active on both devices until transfer completes.</p>
+        <p>1. <b>Zero Data Hotspot Mode:</b> Switch to <b>⚡ Offline Hotspot</b> mode to transfer files at ultra-fast speeds using <b>0 MB mobile data</b> when nearby.</p>
+        <p>2. <b>Global Cloud Mode:</b> Switch to <b>🌐 Global Cloud</b> to send files anywhere in the world across any distance.</p>
+        <p>3. <b>Background & Wake Lock:</b> Screen wake lock automatically keeps your device active during transfers to prevent interruptions.</p>
+        <p>4. <b>Send Multiple Files:</b> Transfer consecutive files in the same session without regenerating codes.</p>
       </div>
     </div>
   </div>
@@ -53,7 +55,7 @@
       <div class="card-shine-effect" id="cardShine"></div>
 
       <h1 class="brand-title">Mehra Share</h1>
-      <p class="tagline">Fast peer-to-peer file sharing between devices</p>
+      <p class="tagline" id="modeSubtitle">Fast peer-to-peer file sharing between devices</p>
 
       <div class="action-grid">
         <button id="sendViewBtn" class="core-btn primary-btn">Send Files</button>
@@ -79,7 +81,7 @@
           </div>
         </div>
 
-        <!-- Send Another File Action (Keeps same code) -->
+        <!-- Send Another File Action -->
         <div id="sendMoreContainer" class="send-more-box hidden">
           <label class="core-btn secondary-btn send-more-label" for="moreFileInput">
             ➕ Choose Another File
@@ -99,6 +101,7 @@
       <div id="statusContainer" class="status-box hidden">
         <p id="statusText">Connecting...</p>
         <div class="progress-bar-bg"><div id="progressFill" class="progress-bar-fill"></div></div>
+        <p id="wakeLockStatus" class="wakelock-pill hidden">🔒 Background Active</p>
       </div>
     </div>
   </main>
