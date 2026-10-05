@@ -1,6 +1,6 @@
 const socket = io();
 
-// Wake Lock
+// Wake Lock to prevent screen sleep/background kill
 let wakeLock = null;
 const wakeLockStatus = document.getElementById('wakeLockStatus');
 
@@ -22,7 +22,7 @@ function releaseWakeLock() {
   }
 }
 
-// 3D Card Tilt & Flash Shine
+// 3D Tilt Card
 const tiltCard = document.getElementById('tiltCard');
 const cardShine = document.getElementById('cardShine');
 if (tiltCard) {
@@ -46,7 +46,7 @@ if (tiltCard) {
   });
 }
 
-// Theme & Overlay
+// Theme & Help
 const themeBtn = document.getElementById('themeToggleBtn');
 const htmlEl = document.documentElement;
 themeBtn.addEventListener('click', () => {
@@ -63,7 +63,7 @@ batOverlay.addEventListener('click', (e) => {
   if (e.target === batOverlay) batOverlay.classList.add('hidden');
 });
 
-// Navigation
+// UI Views
 const sendViewBtn = document.getElementById('sendViewBtn');
 const receiveViewBtn = document.getElementById('receiveViewBtn');
 const senderSection = document.getElementById('senderSection');
@@ -84,57 +84,64 @@ receiveViewBtn.addEventListener('click', () => {
 });
 
 function formatBytes(bytes) {
-  if (bytes === 0) return '0 B';
+  if (!bytes || bytes === 0) return '0 B';
   const k = 1024;
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-// WebRTC Direct P2P (Zero Data over Local Wi-Fi / Hotspot)
+// WebRTC Direct P2P Configuration
 let peerConn = null;
 let dataChannel = null;
+let useWebRTC = false;
+
 const rtcConfig = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' }
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' }
   ]
 };
 
 function setupPeerConnection(isSender, roomCode) {
-  peerConn = new RTCPeerConnection(rtcConfig);
+  try {
+    peerConn = new RTCPeerConnection(rtcConfig);
 
-  peerConn.onicecandidate = (event) => {
-    if (event.candidate) {
-      socket.emit('signal', { code: roomCode, candidate: event.candidate });
-    }
-  };
-
-  if (isSender) {
-    dataChannel = peerConn.createDataChannel('fileTransfer', { ordered: true });
-    setupDataChannel(dataChannel);
-  } else {
-    peerConn.ondatachannel = (event) => {
-      dataChannel = event.channel;
-      setupDataChannel(dataChannel);
+    peerConn.onicecandidate = (event) => {
+      if (event.candidate) {
+        socket.emit('signal', { code: roomCode, candidate: event.candidate });
+      }
     };
+
+    if (isSender) {
+      dataChannel = peerConn.createDataChannel('fileTransfer', { ordered: true });
+      setupDataChannel(dataChannel, true);
+    } else {
+      peerConn.ondatachannel = (event) => {
+        dataChannel = event.channel;
+        setupDataChannel(dataChannel, false);
+      };
+    }
+  } catch (err) {
+    console.log('WebRTC init failed, fallback to stream pipe');
   }
 }
 
-// WebRTC Signaling listeners
 socket.on('signal', async (data) => {
-  if (data.desc) {
-    await peerConn.setRemoteDescription(new RTCSessionDescription(data.desc));
-    if (data.desc.type === 'offer') {
-      const answer = await peerConn.createAnswer();
-      await peerConn.setLocalDescription(answer);
-      socket.emit('signal', { code: currentCode, desc: peerConn.localDescription });
-    }
-  } else if (data.candidate) {
-    try {
+  if (!peerConn) return;
+  try {
+    if (data.desc) {
+      await peerConn.setRemoteDescription(new RTCSessionDescription(data.desc));
+      if (data.desc.type === 'offer') {
+        const answer = await peerConn.createAnswer();
+        await peerConn.setLocalDescription(answer);
+        socket.emit('signal', { code: currentCode, desc: peerConn.localDescription });
+      }
+    } else if (data.candidate) {
       await peerConn.addIceCandidate(new RTCIceCandidate(data.candidate));
-    } catch (e) {}
-  }
+    }
+  } catch (err) {}
 });
 
 // Sender Logic
@@ -187,27 +194,41 @@ copyCodeBtn.addEventListener('click', () => {
 
 socket.on('receiver-joined', async () => {
   statusContainer.classList.remove('hidden');
-  statusText.textContent = 'Receiver connected! Establishing Zero-Data P2P Direct Link...';
+  statusText.textContent = 'Receiver connected! Establishing direct connection...';
 
+  // Initiate WebRTC Direct Link
   setupPeerConnection(true, currentCode);
-  const offer = await peerConn.createOffer();
-  await peerConn.setLocalDescription(offer);
-  socket.emit('signal', { code: currentCode, desc: peerConn.localDescription });
+  try {
+    const offer = await peerConn.createOffer();
+    await peerConn.setLocalDescription(offer);
+    socket.emit('signal', { code: currentCode, desc: peerConn.localDescription });
+  } catch (err) {}
+
+  // Also notify via server stream as instant fallback
+  setTimeout(() => {
+    if (!useWebRTC) {
+      socket.emit('file-meta', {
+        code: currentCode,
+        name: selectedFile.name,
+        size: selectedFile.size
+      });
+    }
+  }, 1800);
 });
 
-// Send file chunks directly over device-to-device DataChannel
+// Direct WebRTC sending
 function sendFileDirectly(file) {
-  statusText.textContent = `⚡ Direct P2P Streaming: 0 MB mobile data used`;
+  statusText.textContent = `⚡ Direct Transfer in progress...`;
   dataChannel.send(JSON.stringify({ type: 'header', name: file.name, size: file.size }));
 
-  const chunkSize = 64 * 1024; // 64 KB chunks
+  const chunkSize = 64 * 1024;
   let offset = 0;
 
   function readSlice() {
     if (offset >= file.size) {
       dataChannel.send(JSON.stringify({ type: 'eof' }));
       progressFill.style.width = '100%';
-      statusText.textContent = `Transfer complete: ${file.name} (Direct Device-to-Device)`;
+      statusText.textContent = `Transfer complete: ${file.name}`;
       sendMoreContainer.classList.remove('hidden');
       return;
     }
@@ -224,7 +245,7 @@ function sendFileDirectly(file) {
       offset += e.target.result.byteLength;
       const pct = Math.round((offset / file.size) * 100);
       progressFill.style.width = pct + '%';
-      statusText.textContent = `⚡ P2P Direct Sending: ${pct}% (${formatBytes(offset)} / ${formatBytes(file.size)})`;
+      statusText.textContent = `Sending: ${pct}% (${formatBytes(offset)} / ${formatBytes(file.size)})`;
       readSlice();
     };
     reader.readAsArrayBuffer(slice);
@@ -232,6 +253,30 @@ function sendFileDirectly(file) {
 
   readSlice();
 }
+
+// Fallback Server Stream Upload
+socket.on('start-upload', () => {
+  if (useWebRTC) return;
+  statusText.textContent = `Streaming ${selectedFile.name} directly to receiver...`;
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', `/up/${currentCode}`);
+
+  xhr.upload.onprogress = (e) => {
+    if (e.lengthComputable) {
+      const pct = Math.round((e.loaded / e.total) * 100);
+      progressFill.style.width = pct + '%';
+      statusText.textContent = `Sending: ${pct}% (${formatBytes(e.loaded)} / ${formatBytes(e.total)})`;
+    }
+  };
+
+  xhr.onload = () => {
+    progressFill.style.width = '100%';
+    statusText.textContent = `Transfer complete: ${selectedFile.name}`;
+    sendMoreContainer.classList.remove('hidden');
+  };
+
+  xhr.send(selectedFile);
+});
 
 // Receiver Logic
 const roomCodeInput = document.getElementById('roomCodeInput');
@@ -243,23 +288,23 @@ connectRoomBtn.addEventListener('click', () => {
   currentCode = code;
   socket.emit('join-room', code);
   statusContainer.classList.remove('hidden');
-  statusText.textContent = 'Connecting to sender via Direct P2P...';
+  statusText.textContent = 'Connecting to sender...';
   setupPeerConnection(false, code);
   requestWakeLock();
 });
 
-// Setup DataChannel Receive Buffering
 let receivedBuffers = [];
 let incomingMeta = null;
 let receivedBytes = 0;
 
-function setupDataChannel(channel) {
+function setupDataChannel(channel, isSender) {
   channel.binaryType = 'arraybuffer';
 
   channel.onopen = () => {
+    useWebRTC = true;
     statusContainer.classList.remove('hidden');
-    statusText.textContent = '⚡ Connected! Direct Zero-Data Channel is ready.';
-    if (selectedFile && channel.readyState === 'open') {
+    statusText.textContent = '⚡ Direct link established!';
+    if (isSender && selectedFile) {
       sendFileDirectly(selectedFile);
     }
   };
@@ -271,9 +316,8 @@ function setupDataChannel(channel) {
         incomingMeta = msg;
         receivedBuffers = [];
         receivedBytes = 0;
-        statusText.textContent = `⚡ Receiving ${incomingMeta.name} (0 Data Direct P2P)...`;
+        statusText.textContent = `Receiving ${incomingMeta.name}...`;
       } else if (msg.type === 'eof') {
-        // Build file locally in browser and auto trigger download without internet
         const blob = new Blob(receivedBuffers);
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -285,7 +329,7 @@ function setupDataChannel(channel) {
         URL.revokeObjectURL(url);
 
         progressFill.style.width = '100%';
-        statusText.textContent = `⚡ File saved to device! 0 MB mobile data used.`;
+        statusText.textContent = `File saved to device!`;
         releaseWakeLock();
       }
     } else {
@@ -294,11 +338,24 @@ function setupDataChannel(channel) {
       if (incomingMeta && incomingMeta.size) {
         const pct = Math.round((receivedBytes / incomingMeta.size) * 100);
         progressFill.style.width = pct + '%';
-        statusText.textContent = `⚡ Receiving (0 MB Data): ${pct}% (${formatBytes(receivedBytes)} / ${formatBytes(incomingMeta.size)})`;
+        statusText.textContent = `Receiving: ${pct}% (${formatBytes(receivedBytes)} / ${formatBytes(incomingMeta.size)})`;
       }
     }
   };
 }
+
+// Fallback auto-trigger download if peer stream is used
+socket.on('file-meta', (meta) => {
+  if (useWebRTC) return;
+  statusText.textContent = `Downloading ${meta.name} (${formatBytes(meta.size)})...`;
+  progressFill.style.width = '100%';
+  window.location.href = `/dl/${meta.code}?name=${encodeURIComponent(meta.name)}&size=${meta.size}`;
+});
+
+socket.on('file-completed', () => {
+  statusText.textContent = 'File received successfully! Ready for next file from sender.';
+  releaseWakeLock();
+});
 
 // Send Another File handler
 moreFileInput.addEventListener('change', (e) => {
@@ -310,8 +367,17 @@ moreFileInput.addEventListener('change', (e) => {
 });
 
 sendNextFileBtn.addEventListener('click', () => {
-  if (!selectedFile || !dataChannel || dataChannel.readyState !== 'open') return;
+  if (!selectedFile) return;
   sendNextFileBtn.classList.add('hidden');
   progressFill.style.width = '0%';
-  sendFileDirectly(selectedFile);
+  
+  if (useWebRTC && dataChannel && dataChannel.readyState === 'open') {
+    sendFileDirectly(selectedFile);
+  } else {
+    socket.emit('file-meta', {
+      code: currentCode,
+      name: selectedFile.name,
+      size: selectedFile.size
+    });
+  }
 });
