@@ -10,7 +10,6 @@
 </head>
 <body>
 
-  <!-- Top Right Header Controls -->
   <header class="app-header">
     <div class="header-right">
       <button id="themeToggleBtn" class="header-btn" title="Toggle Theme">☀️</button>
@@ -40,15 +39,15 @@
 
       <div class="help-popup-card">
         <h3>Mehra Share Help</h3>
-        <p>1. <b>Send:</b> Choose your file and share the generated <b>6-digit code</b> with the receiver.</p>
-        <p>2. <b>Receive:</b> The receiver enters the 6-digit code and starts downloading instantly.</p>
-        <p>3. <b>Limit:</b> Supports peer streaming up to <b>6 GB</b> per transfer.</p>
-        <p>4. <b>Streaming:</b> Keep the browser tab open on both devices until the transfer finishes.</p>
+        <p>1. <b>Send:</b> Select a file and share the <b>6-digit code</b> once with the receiver.</p>
+        <p>2. <b>Send More Files:</b> After a file finishes, click <b>"Send Another File"</b> to transfer more files in the same session without re-entering the code.</p>
+        <p>3. <b>Limit:</b> Supports zero-RAM high-speed streaming up to <b>1 TB</b>.</p>
+        <p>4. <b>Streaming:</b> Keep the browser tab active on both devices until transfer completes.</p>
       </div>
     </div>
   </div>
 
-  <!-- Main 3D Tilt Card -->
+  <!-- Main 3D Card -->
   <main class="main-container">
     <div class="app-card" id="tiltCard">
       <div class="card-shine-effect" id="cardShine"></div>
@@ -63,19 +62,30 @@
 
       <!-- Sender Section -->
       <div id="senderSection" class="section-box">
-        <label class="drop-zone" for="fileInput">
-          <span id="fileLabel">📁 Choose a file</span>
-          <input type="file" id="fileInput" />
-        </label>
-        <button id="generateCodeBtn" class="core-btn action-submit-btn">Generate Code</button>
-        
-        <!-- 6-Digit Code Badge -->
+        <div id="filePickerWrapper">
+          <label class="drop-zone" for="fileInput">
+            <span id="fileLabel">📁 Choose a file</span>
+            <input type="file" id="fileInput" />
+          </label>
+          <button id="generateCodeBtn" class="core-btn action-submit-btn">Generate Code</button>
+        </div>
+
+        <!-- 6-Digit Code Box -->
         <div id="codeDisplayContainer" class="code-box-wrapper hidden">
-          <p class="code-helper-text">Share this 6-digit code with the receiver:</p>
+          <p class="code-helper-text">Connected Session Code:</p>
           <div class="code-badge-row">
             <span id="generatedCodeText" class="code-digits">------</span>
             <button id="copyCodeBtn" class="code-copy-btn" title="Copy Code">📋 Copy</button>
           </div>
+        </div>
+
+        <!-- Send Another File Action (Keeps same code) -->
+        <div id="sendMoreContainer" class="send-more-box hidden">
+          <label class="core-btn secondary-btn send-more-label" for="moreFileInput">
+            ➕ Choose Another File
+            <input type="file" id="moreFileInput" />
+          </label>
+          <button id="sendNextFileBtn" class="core-btn primary-btn hidden">Send Selected File</button>
         </div>
       </div>
 
@@ -85,6 +95,7 @@
         <button id="connectRoomBtn" class="core-btn action-submit-btn">Connect & Download</button>
       </div>
 
+      <!-- Live Transfer Status -->
       <div id="statusContainer" class="status-box hidden">
         <p id="statusText">Connecting...</p>
         <div class="progress-bar-bg"><div id="progressFill" class="progress-bar-fill"></div></div>

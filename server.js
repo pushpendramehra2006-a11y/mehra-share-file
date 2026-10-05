@@ -7,16 +7,19 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: '*' },
-  pingTimeout: 60000,
-  pingInterval: 25000
+  pingTimeout: 120000,
+  pingInterval: 30000,
+  maxHttpBufferSize: 1e8
 });
 
+// Disable all socket/HTTP idle timeouts for long transfers (up to 1 TB)
 server.timeout = 0;
 server.keepAliveTimeout = 0;
 server.requestTimeout = 0;
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Room structure: code -> { sender, receiver, currentTransfer: { fileId, pendingRes } }
 const rooms = {};
 
 io.on('connection', (socket) => {
@@ -37,8 +40,16 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Handle meta for current or subsequent files in the same session
   socket.on('file-meta', (data) => {
     socket.to(data.code).emit('file-meta', data);
+  });
+
+  // Client pulse during transfer to prevent Render free-tier idling
+  socket.on('transfer-heartbeat', (code) => {
+    if (rooms[code]) {
+      socket.to(code).emit('peer-heartbeat');
+    }
   });
 
   socket.on('disconnect', () => {
@@ -51,32 +62,39 @@ io.on('connection', (socket) => {
   });
 });
 
+// Direct zero-buffer streaming pipe for uploads
 app.post('/up/:code', (req, res) => {
   const code = req.params.code;
   const room = rooms[code];
 
   if (!room || !room.pendingRes) {
-    return res.status(400).send('Receiver not ready for download');
+    return res.status(400).send('Receiver not ready');
   }
 
   req.pipe(room.pendingRes);
 
   req.on('end', () => {
-    res.status(200).send('Done');
+    room.pendingRes = null;
+    res.status(200).send('OK');
+    io.to(code).emit('file-completed');
   });
 
   req.on('error', () => {
-    if (room.pendingRes) room.pendingRes.end();
-    res.status(500).send('Transfer error');
+    if (room.pendingRes) {
+      room.pendingRes.end();
+      room.pendingRes = null;
+    }
+    res.status(500).send('Stream error');
   });
 });
 
+// Receiver stream endpoint
 app.get('/dl/:code', (req, res) => {
   const code = req.params.code;
   const room = rooms[code];
 
   if (!room) {
-    return res.status(404).send('Session not found');
+    return res.status(404).send('Session expired');
   }
 
   const name = req.query.name || 'file';
@@ -94,5 +112,5 @@ require('./keepalive');
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
+  console.log(`Mehra Share running on port ${PORT}`);
 });

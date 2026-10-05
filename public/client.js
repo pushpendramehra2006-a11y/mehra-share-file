@@ -1,6 +1,6 @@
 const socket = io();
 
-// Rain generator for Batman dark mode
+// Rain generator
 const rainContainer = document.getElementById('rainLayer');
 function initRain() {
   if (!rainContainer) return;
@@ -16,7 +16,7 @@ function initRain() {
 }
 initRain();
 
-// Sunlight floating motes for light mode
+// Sunlight motes
 const sunMotesContainer = document.getElementById('sunParticlesLayer');
 function initSunMotes() {
   if (!sunMotesContainer) return;
@@ -72,7 +72,7 @@ themeBtn.addEventListener('click', () => {
   themeBtn.textContent = nextTheme === 'dark' ? '☀️' : '🌙';
 });
 
-// Help Torch Overlay
+// Help Overlay Toggle
 const helpBtn = document.getElementById('helpTorchBtn');
 const batOverlay = document.getElementById('batSignalOverlay');
 
@@ -106,13 +106,27 @@ receiveViewBtn.addEventListener('click', () => {
   senderSection.classList.add('hidden');
 });
 
-// Sender Flow: 6-Digit Code
+// Format readable size up to 1 TB
+function formatBytes(bytes) {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Sender Logic
 const fileInput = document.getElementById('fileInput');
 const fileLabel = document.getElementById('fileLabel');
 const generateCodeBtn = document.getElementById('generateCodeBtn');
+const filePickerWrapper = document.getElementById('filePickerWrapper');
 const codeDisplayContainer = document.getElementById('codeDisplayContainer');
 const generatedCodeText = document.getElementById('generatedCodeText');
 const copyCodeBtn = document.getElementById('copyCodeBtn');
+
+const sendMoreContainer = document.getElementById('sendMoreContainer');
+const moreFileInput = document.getElementById('moreFileInput');
+const sendNextFileBtn = document.getElementById('sendNextFileBtn');
 
 const statusContainer = document.getElementById('statusContainer');
 const statusText = document.getElementById('statusText');
@@ -120,23 +134,34 @@ const progressFill = document.getElementById('progressFill');
 
 let selectedFile = null;
 let currentCode = null;
+let isReceiverConnected = false;
+let heartbeatInterval = null;
+
+function startHeartbeat() {
+  if (heartbeatInterval) clearInterval(heartbeatInterval);
+  heartbeatInterval = setInterval(() => {
+    if (currentCode) socket.emit('transfer-heartbeat', currentCode);
+  }, 30000);
+}
 
 fileInput.addEventListener('change', (e) => {
   if (e.target.files.length > 0) {
     selectedFile = e.target.files[0];
-    fileLabel.textContent = `📁 ${selectedFile.name} (${(selectedFile.size / (1024*1024)).toFixed(2)} MB)`;
+    fileLabel.textContent = `📁 ${selectedFile.name} (${formatBytes(selectedFile.size)})`;
   }
 });
 
 generateCodeBtn.addEventListener('click', () => {
-  if (!selectedFile) return alert('Please select a file first');
+  if (!selectedFile) return alert('Please choose a file first');
   currentCode = Math.floor(100000 + Math.random() * 900000).toString();
   socket.emit('create-room', currentCode);
   
   generatedCodeText.textContent = currentCode;
   codeDisplayContainer.classList.remove('hidden');
+  filePickerWrapper.classList.add('hidden');
   statusContainer.classList.remove('hidden');
-  statusText.textContent = `Room created! Ask the receiver to enter code: ${currentCode}`;
+  statusText.textContent = `Session ready! Share code ${currentCode} with the receiver.`;
+  startHeartbeat();
 });
 
 copyCodeBtn.addEventListener('click', () => {
@@ -148,8 +173,10 @@ copyCodeBtn.addEventListener('click', () => {
 });
 
 socket.on('receiver-joined', () => {
+  isReceiverConnected = true;
   statusContainer.classList.remove('hidden');
   statusText.textContent = 'Receiver connected! Transfer starting...';
+  
   socket.emit('file-meta', {
     code: currentCode,
     name: selectedFile.name,
@@ -158,7 +185,7 @@ socket.on('receiver-joined', () => {
 });
 
 socket.on('start-upload', () => {
-  statusText.textContent = 'Streaming directly to receiver...';
+  statusText.textContent = `Streaming ${selectedFile.name} directly to receiver...`;
   const xhr = new XMLHttpRequest();
   xhr.open('POST', `/up/${currentCode}`);
 
@@ -166,30 +193,62 @@ socket.on('start-upload', () => {
     if (e.lengthComputable) {
       const pct = Math.round((e.loaded / e.total) * 100);
       progressFill.style.width = pct + '%';
-      statusText.textContent = `Streaming file: ${pct}%`;
+      statusText.textContent = `Transferring ${selectedFile.name}: ${pct}% (${formatBytes(e.loaded)} / ${formatBytes(e.total)})`;
     }
   };
 
   xhr.onload = () => {
-    statusText.textContent = 'Transfer complete!';
+    progressFill.style.width = '100%';
+    statusText.textContent = `Transfer complete: ${selectedFile.name}`;
+    sendMoreContainer.classList.remove('hidden');
   };
 
   xhr.send(selectedFile);
 });
 
-// Receiver Flow
+// "Send Another File" Handler in the same session
+moreFileInput.addEventListener('change', (e) => {
+  if (e.target.files.length > 0) {
+    selectedFile = e.target.files[0];
+    sendNextFileBtn.textContent = `Send ${selectedFile.name} (${formatBytes(selectedFile.size)})`;
+    sendNextFileBtn.classList.remove('hidden');
+  }
+});
+
+sendNextFileBtn.addEventListener('click', () => {
+  if (!selectedFile) return;
+  sendNextFileBtn.classList.add('hidden');
+  progressFill.style.width = '0%';
+  statusText.textContent = `Preparing to send ${selectedFile.name}...`;
+
+  // Notify receiver in the same connected room
+  socket.emit('file-meta', {
+    code: currentCode,
+    name: selectedFile.name,
+    size: selectedFile.size
+  });
+});
+
+// Receiver Logic
 const roomCodeInput = document.getElementById('roomCodeInput');
 const connectRoomBtn = document.getElementById('connectRoomBtn');
 
 connectRoomBtn.addEventListener('click', () => {
   const code = roomCodeInput.value.trim();
   if (!code || code.length !== 6) return alert('Please enter a valid 6-digit code');
+  currentCode = code;
   socket.emit('join-room', code);
   statusContainer.classList.remove('hidden');
   statusText.textContent = 'Connecting to sender...';
+  startHeartbeat();
 });
 
 socket.on('file-meta', (meta) => {
-  statusText.textContent = `Downloading ${meta.name}...`;
+  statusText.textContent = `Downloading ${meta.name} (${formatBytes(meta.size)})...`;
+  progressFill.style.width = '100%';
   window.location.href = `/dl/${meta.code}?name=${encodeURIComponent(meta.name)}&size=${meta.size}`;
+});
+
+socket.on('file-completed', () => {
+  statusText.textContent = 'File received successfully! Ready for next file from sender.';
 });
